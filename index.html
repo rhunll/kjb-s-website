@@ -104,14 +104,14 @@
                 <div class="input-wrapper">
                     <div class="input-label-row">
                         <label>有球训练 (min)</label>
-                        <button type="button" class="history-btn" onclick="openHistory()">历史</button>
+                        <button type="button" class="history-btn" onclick="openHistory('ball')">历史</button>
                     </div>
                     <input type="number" id="ballInput" placeholder="例如 90">
                 </div>
                 <div class="input-wrapper">
                     <div class="input-label-row">
                         <label>功能性训练 (min)</label>
-                        <button type="button" class="history-btn" onclick="openHistory()">历史</button>
+                        <button type="button" class="history-btn" onclick="openHistory('func')">历史</button>
                     </div>
                     <input type="number" id="funcInput" placeholder="例如 45">
                 </div>
@@ -148,7 +148,7 @@
     <div id="historyModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>训练历史记录</h3>
+                <h3 id="modalTitle">训练历史记录</h3>
                 <button class="close-btn" onclick="closeHistory()">&times;</button>
             </div>
             <ul id="historyList" class="history-list"></ul>
@@ -253,25 +253,50 @@
             alert('本周记录已清空。');
         }
 
-        // 打开历史记录弹窗
-        function openHistory() {
+        // 打开历史记录弹窗（增加 type 参数区分）
+        function openHistory(type) {
             const records = loadRecords();
             const historyList = document.getElementById('historyList');
+            const modalTitle = document.getElementById('modalTitle');
             historyList.innerHTML = '';
+
+            // 动态调整标题
+            if (type === 'ball') {
+                modalTitle.innerText = '有球训练历史记录';
+            } else if (type === 'func') {
+                modalTitle.innerText = '功能性训练历史记录';
+            }
 
             if (records.length === 0) {
                 historyList.innerHTML = '<li class="empty-msg">暂无打卡记录</li>';
             } else {
                 // 按日期倒序排列
                 const sortedRecords = records.sort((a, b) => new Date(b.date) - new Date(a.date));
+                let hasValidRecord = false;
+
                 sortedRecords.forEach(record => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `
-                        <span class="history-date">${record.date}</span>
-                        <span class="history-detail">有球训练：${record.ball}min，功能性训练：${record.func}min</span>
-                    `;
-                    historyList.appendChild(li);
+                    if (type === 'ball' && record.ball > 0) {
+                        hasValidRecord = true;
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <span class="history-date">${record.date}</span>
+                            <span class="history-detail">有球训练：${record.ball} min</span>
+                        `;
+                        historyList.appendChild(li);
+                    } else if (type === 'func' && record.func > 0) {
+                        hasValidRecord = true;
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <span class="history-date">${record.date}</span>
+                            <span class="history-detail">功能性训练：${record.func} min</span>
+                        `;
+                        historyList.appendChild(li);
+                    }
                 });
+
+                if (!hasValidRecord) {
+                    historyList.innerHTML = '<li class="empty-msg">暂无该类型的打卡记录</li>';
+                }
             }
             document.getElementById('historyModal').style.display = 'flex';
         }
