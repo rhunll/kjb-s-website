@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>规划</title>
+    <style>
+        :root {
+            --bg: #0f1115;
+            --card: #1a1d24;
+            --text: #f5f5f5;
+            --muted: #b8bdc7;
+            --accent: #7eb8ff;
+            --orange: #ff7a18;
+            --line: #2a2f3a;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg); color: var(--text);
+            line-height: 1.7; min-height: 100vh;
+        }
+        header { text-align: center; padding: 72px 24px 40px; }
+        h1 { font-size: 2.6rem; letter-spacing: 0.12em; font-weight: 600; }
+        .subtitle { color: var(--muted); margin-top: 12px; font-size: 1rem; }
+        main { max-width: 800px; margin: 0 auto; padding: 0 24px 64px; }
+        section {
+            background: var(--card); border: 1px solid var(--line);
+            border-radius: 14px; padding: 28px; margin-bottom: 20px;
+        }
+        h2 { font-size: 1.35rem; color: var(--accent); margin-bottom: 10px; font-weight: 600; }
+        p { color: var(--muted); }
+        .input-group { display: flex; gap: 16px; margin: 20px 0; flex-wrap: wrap; }
+        .input-wrapper { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 6px; }
+        .input-label-row { display: flex; justify-content: space-between; align-items: center; }
+        .input-label-row label { font-size: 0.9rem; color: var(--text); font-weight: 500; }
+        .history-btn {
+            background: transparent; color: var(--accent);
+            border: 1px solid var(--accent); border-radius: 4px;
+            padding: 2px 8px; font-size: 0.75rem; cursor: pointer;
+        }
+        .history-btn:hover { background: var(--accent); color: #0f1115; }
+        .input-wrapper input {
+            padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line);
+            background: var(--bg); color: var(--text); font-size: 0.95rem;
+        }
+        .input-wrapper input:focus { outline: none; border-color: var(--orange); }
+        .action-btns { display: flex; gap: 12px; align-items: center; }
+        .checkin-btn {
+            background: var(--orange); color: #0f1115;
+            border: none; border-radius: 8px; padding: 10px 24px;
+            font-weight: 700; font-size: 0.95rem; cursor: pointer; height: 42px;
+        }
+        .checkin-btn:hover { opacity: 0.85; }
+        .clear-btn {
+            background: transparent; color: var(--muted); border: 1px solid var(--line);
+            border-radius: 8px; padding: 10px 16px; font-size: 0.85rem; cursor: pointer;
+        }
+        .clear-btn:hover { color: #ff6b6b; border-color: #ff6b6b; }
+        .stats-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+        .stat-card { background: var(--bg); border-radius: 10px; padding: 20px; border: 1px solid var(--line); }
+        .stat-card .stat-label { color: var(--muted); font-size: 0.85rem; margin-bottom: 8px; }
+        .stat-card .stat-value { color: var(--orange); font-weight: 700; font-size: 1.8rem; }
+        .stat-card .stat-unit { font-size: 0.9rem; font-weight: 400; color: var(--text); }
+        
+        /* 模态框样式 */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+            width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; padding: 24px;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .modal-header h3 { color: var(--orange); margin: 0; }
+        .close-btn { background: transparent; border: none; color: var(--muted); font-size: 1.5rem; cursor: pointer; }
+        .history-list { list-style: none; }
+        .history-list li {
+            padding: 12px 0; border-bottom: 1px solid var(--line);
+            display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem;
+        }
+        .history-list li:last-child { border-bottom: none; }
+        .history-date { color: var(--accent); font-weight: 600; }
+        .history-detail { color: var(--text); }
+        .empty-msg { color: var(--muted); text-align: center; padding: 20px 0; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>规划</h1>
+        <p class="subtitle">记录这一年的训练、学习和想法</p>
+    </header>
+    <main>
+        <!-- 删除了原本的“目标CUBAL”板块 -->
+
+        <section>
+            <h2>篮球训练打卡</h2>
+            <p style="margin-bottom: 16px;">Goal: CUBAL</p>
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <div class="input-label-row">
+                        <label>有球训练 (min)</label>
+                        <button type="button" class="history-btn" onclick="openHistory('ball')">历史</button>
+                    </div>
+                    <input type="number" id="ballInput" placeholder="例如 90">
+                </div>
+                <div class="input-wrapper">
+                    <div class="input-label-row">
+                        <label>功能性训练 (min)</label>
+                        <button type="button" class="history-btn" onclick="openHistory('func')">历史</button>
+                    </div>
+                    <input type="number" id="funcInput" placeholder="例如 45">
+                </div>
+            </div>
+            <div class="action-btns">
+                <button class="checkin-btn" onclick="addWorkout()">打卡</button>
+                <button class="clear-btn" onclick="clearData()">清空本周记录</button>
+            </div>
+            <div class="stats-panel">
+                <div class="stat-card">
+                    <div class="stat-label">本周有球训练总时长</div>
+                    <div class="stat-value"><span id="totalBall">0</span> <span class="stat-unit">分钟</span></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">本周功能性训练总时长</div>
+                    <div class="stat-value"><span id="totalFunc">0</span> <span class="stat-unit">分钟</span></div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>供应链学习</h2>
+            <p>从采购、库存到物流配送，理解货物如何流动。把课堂知识连成一条完整的供应链。</p>
+        </section>
+
+        <section>
+            <h2>2026年赚到第一笔钱</h2>
+            <p>观察身边的需求和机会，记下值得尝试的点子。用小实验验证，而不是只停留在想象里。</p>
+        </section>
+    </main>
+    <footer>规划 · 个人主页</footer>
+
+    <!-- 历史记录弹窗 -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">训练历史记录</h3>
+                <button class="close-btn" onclick="closeHistory()">&times;</button>
+            </div>
+            <ul id="historyList" class="history-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        // 获取今天的日期字符串 YYYY-MM-DD
+        function getTodayStr() {
+            const d = new Date();
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+
+        // 读取所有打卡记录
+        function loadRecords() {
+            const data = localStorage.getItem('basketballRecords');
+            return data ? JSON.parse(data) : [];
+        }
+
+        // 保存打卡记录
+        function saveRecords(records) {
+            localStorage.setItem('basketballRecords', JSON.stringify(records));
+        }
+
+        // 获取本周的起始时间（周一 00:00:00）
+        function getWeekStart() {
+            const now = new Date();
+            const day = now.getDay() || 7; 
+            const diff = now.getDate() - day + 1; 
+            const monday = new Date(now.setDate(diff));
+            monday.setHours(0, 0, 0, 0);
+            return monday.getTime();
+        }
+
+        // 计算本周总时长
+        function calculateWeekTotals() {
+            const records = loadRecords();
+            const weekStart = getWeekStart();
+            let ballTotal = 0;
+            let funcTotal = 0;
+
+            records.forEach(record => {
+                const recordTime = new Date(record.date).getTime();
+                // 只统计本周的数据
+                if (recordTime >= weekStart) {
+                    ballTotal += record.ball || 0;
+                    funcTotal += record.func || 0;
+                }
+            });
+            return { ball: ballTotal, func: funcTotal };
+        }
+
+        // 页面渲染更新
+        function render() {
+            const totals = calculateWeekTotals();
+            document.getElementById('totalBall').innerText = totals.ball;
+            document.getElementById('totalFunc').innerText = totals.func;
+        }
+
+        // 打卡动作
+        function addWorkout() {
+            const ball = parseInt(document.getElementById('ballInput').value) || 0;
+            const func = parseInt(document.getElementById('funcInput').value) || 0;
+
+            if (ball === 0 && func === 0) {
+                alert('请输入训练时长！');
+                return;
+            }
+
+            const today = getTodayStr();
+            const records = loadRecords();
+            const todayRecord = records.find(r => r.date === today);
+
+            if (todayRecord) {
+                // 当天已打卡，时长累加
+                todayRecord.ball = (todayRecord.ball || 0) + ball;
+                todayRecord.func = (todayRecord.func || 0) + func;
+            } else {
+                // 新的一天，新增记录
+                records.push({ date: today, ball: ball, func: func });
+            }
+
+            saveRecords(records);
+            document.getElementById('ballInput').value = '';
+            document.getElementById('funcInput').value = '';
+            render();
+            alert('打卡成功！');
+        }
+
+        // 清空本周记录
+        function clearData() {
+            if (!confirm('确定要清空本周的训练记录吗？此操作不可恢复。')) return;
+            
+            const weekStart = getWeekStart();
+            let records = loadRecords();
+            // 过滤掉本周的数据，保留上周及更早的数据
+            records = records.filter(record => {
+                return new Date(record.date).getTime() < weekStart;
+            });
+            saveRecords(records);
+            render();
+            alert('本周记录已清空。');
+        }
+
+        // 打开历史记录弹窗（增加 type 参数区分）
+        function openHistory(type) {
+            const records = loadRecords();
+            const historyList = document.getElementById('historyList');
+            const modalTitle = document.getElementById('modalTitle');
+            historyList.innerHTML = '';
+
+            // 动态调整标题
+            if (type === 'ball') {
+                modalTitle.innerText = '有球训练历史记录';
+            } else if (type === 'func') {
+                modalTitle.innerText = '功能性训练历史记录';
+            }
+
+            if (records.length === 0) {
+                historyList.innerHTML = '<li class="empty-msg">暂无打卡记录</li>';
+            } else {
+                // 按日期倒序排列
+                const sortedRecords = records.sort((a, b) => new Date(b.date) - new Date(a.date));
+                let hasValidRecord = false;
+
+                sortedRecords.forEach(record => {
+                    if (type === 'ball' && record.ball > 0) {
+                        hasValidRecord = true;
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <span class="history-date">${record.date}</span>
+                            <span class="history-detail">有球训练：${record.ball} min</span>
+                        `;
+                        historyList.appendChild(li);
+                    } else if (type === 'func' && record.func > 0) {
+                        hasValidRecord = true;
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <span class="history-date">${record.date}</span>
+                            <span class="history-detail">功能性训练：${record.func} min</span>
+                        `;
+                        historyList.appendChild(li);
+                    }
+                });
+
+                if (!hasValidRecord) {
+                    historyList.innerHTML = '<li class="empty-msg">暂无该类型的打卡记录</li>';
+                }
+            }
+            document.getElementById('historyModal').style.display = 'flex';
+        }
+
+        // 关闭历史记录弹窗
+        function closeHistory() {
+            document.getElementById('historyModal').style.display = 'none';
+        }
+
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            const modal = document.getElementById('historyModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // 初始化页面
+        render();
+    </script>
+</body>
+</html>
