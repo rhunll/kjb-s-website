@@ -1,318 +1,1378 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>规划</title>
-    <style>
-        :root {
-            --bg: #0f1115;
-            --card: #1a1d24;
-            --text: #f5f5f5;
-            --muted: #b8bdc7;
-            --accent: #7eb8ff;
-            --orange: #ff7a18;
-            --line: #2a2f3a;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
-            background: var(--bg); color: var(--text);
-            line-height: 1.7; min-height: 100vh;
-        }
-        header { text-align: center; padding: 72px 24px 40px; }
-        h1 { font-size: 2.6rem; letter-spacing: 0.12em; font-weight: 600; }
-        .subtitle { color: var(--muted); margin-top: 12px; font-size: 1rem; }
-        main { max-width: 800px; margin: 0 auto; padding: 0 24px 64px; }
-        section {
-            background: var(--card); border: 1px solid var(--line);
-            border-radius: 14px; padding: 28px; margin-bottom: 20px;
-        }
-        h2 { font-size: 1.35rem; color: var(--accent); margin-bottom: 10px; font-weight: 600; }
-        p { color: var(--muted); }
-        .input-group { display: flex; gap: 16px; margin: 20px 0; flex-wrap: wrap; }
-        .input-wrapper { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 6px; }
-        .input-label-row { display: flex; justify-content: space-between; align-items: center; }
-        .input-label-row label { font-size: 0.9rem; color: var(--text); font-weight: 500; }
-        .history-btn {
-            background: transparent; color: var(--accent);
-            border: 1px solid var(--accent); border-radius: 4px;
-            padding: 2px 8px; font-size: 0.75rem; cursor: pointer;
-        }
-        .history-btn:hover { background: var(--accent); color: #0f1115; }
-        .input-wrapper input {
-            padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line);
-            background: var(--bg); color: var(--text); font-size: 0.95rem;
-        }
-        .input-wrapper input:focus { outline: none; border-color: var(--orange); }
-        .action-btns { display: flex; gap: 12px; align-items: center; }
-        .checkin-btn {
-            background: var(--orange); color: #0f1115;
-            border: none; border-radius: 8px; padding: 10px 24px;
-            font-weight: 700; font-size: 0.95rem; cursor: pointer; height: 42px;
-        }
-        .checkin-btn:hover { opacity: 0.85; }
-        .clear-btn {
-            background: transparent; color: var(--muted); border: 1px solid var(--line);
-            border-radius: 8px; padding: 10px 16px; font-size: 0.85rem; cursor: pointer;
-        }
-        .clear-btn:hover { color: #ff6b6b; border-color: #ff6b6b; }
-        .stats-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
-        .stat-card { background: var(--bg); border-radius: 10px; padding: 20px; border: 1px solid var(--line); }
-        .stat-card .stat-label { color: var(--muted); font-size: 0.85rem; margin-bottom: 8px; }
-        .stat-card .stat-value { color: var(--orange); font-weight: 700; font-size: 1.8rem; }
-        .stat-card .stat-unit { font-size: 0.9rem; font-weight: 400; color: var(--text); }
-        
-        /* 模态框样式 */
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.7); z-index: 1000; justify-content: center; align-items: center;
-        }
-        .modal-content {
-            background: var(--card); border: 1px solid var(--line); border-radius: 14px;
-            width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto; padding: 24px;
-        }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .modal-header h3 { color: var(--orange); margin: 0; }
-        .close-btn { background: transparent; border: none; color: var(--muted); font-size: 1.5rem; cursor: pointer; }
-        .history-list { list-style: none; }
-        .history-list li {
-            padding: 12px 0; border-bottom: 1px solid var(--line);
-            display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem;
-        }
-        .history-list li:last-child { border-bottom: none; }
-        .history-date { color: var(--accent); font-weight: 600; }
-        .history-detail { color: var(--text); }
-        .empty-msg { color: var(--muted); text-align: center; padding: 20px 0; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#090c10">
+  <meta name="description" content="CUBAL 篮球训练计划打卡，记录每一次训练与进步。">
+  <title>CUBAL 训练计划</title>
+  <style>
+    :root {
+      --bg: #090c10;
+      --surface: #11161d;
+      --surface-raised: #171e27;
+      --surface-soft: #1b232d;
+      --line: rgba(255, 255, 255, 0.09);
+      --line-strong: rgba(255, 255, 255, 0.15);
+      --text: #f5f7f3;
+      --muted: #929ca8;
+      --accent: #d6ff3f;
+      --accent-dark: #1a2109;
+      --orange: #ff6a35;
+      --danger: #ff6b6b;
+      --success: #9ce85c;
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --shadow: 0 30px 80px rgba(0, 0, 0, 0.42);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      color-scheme: dark;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 15% 0%, rgba(214, 255, 63, 0.1), transparent 30rem),
+        radial-gradient(circle at 90% 25%, rgba(255, 106, 53, 0.08), transparent 28rem),
+        var(--bg);
+      color: var(--text);
+      font-family: "Avenir Next", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body::before {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+      background-size: 54px 54px;
+      content: "";
+      mask-image: linear-gradient(to bottom, black, transparent 82%);
+      pointer-events: none;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+    }
+
+    button,
+    select {
+      cursor: pointer;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+
+    .site-shell {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 38px 0 30px;
+    }
+
+    .hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 32px;
+      margin-bottom: 28px;
+      padding: 0 8px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .brand-mark {
+      position: relative;
+      display: grid;
+      width: 62px;
+      height: 62px;
+      flex: 0 0 62px;
+      place-items: center;
+      overflow: hidden;
+      border: 1px solid rgba(214, 255, 63, 0.3);
+      border-radius: 18px;
+      background: var(--accent);
+      box-shadow: 0 12px 35px rgba(214, 255, 63, 0.14);
+      color: var(--accent-dark);
+    }
+
+    .brand-mark::after {
+      position: absolute;
+      right: -10px;
+      bottom: -17px;
+      width: 42px;
+      height: 42px;
+      border: 9px solid rgba(9, 12, 16, 0.13);
+      border-radius: 50%;
+      content: "";
+    }
+
+    .brand-mark svg {
+      width: 34px;
+      height: 34px;
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin: 0 0 7px;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      width: 17px;
+      height: 2px;
+      background: currentColor;
+      content: "";
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(26px, 4vw, 42px);
+      font-weight: 850;
+      letter-spacing: -0.045em;
+      line-height: 1.08;
+    }
+
+    .hero-subtitle {
+      margin: 9px 0 0;
+      color: var(--muted);
+      font-size: clamp(13px, 1.6vw, 16px);
+      line-height: 1.6;
+    }
+
+    .season-chip {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      flex: 0 0 auto;
+      padding: 11px 15px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(17, 22, 29, 0.72);
+      color: #c5cdd3;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      backdrop-filter: blur(12px);
+    }
+
+    .season-chip span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 5px rgba(156, 232, 92, 0.09);
+    }
+
+    .training-section {
+      position: relative;
+      width: 100%;
+      max-width: 1080px;
+      margin: 0 auto;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-xl);
+      background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.035), transparent 38%),
+        rgba(17, 22, 29, 0.88);
+      box-shadow: var(--shadow);
+      padding: clamp(26px, 5vw, 54px);
+      backdrop-filter: blur(18px);
+    }
+
+    .training-section::before {
+      position: absolute;
+      top: -125px;
+      right: -110px;
+      width: 310px;
+      height: 310px;
+      border: 1px solid rgba(214, 255, 63, 0.18);
+      border-radius: 50%;
+      box-shadow:
+        0 0 0 46px rgba(214, 255, 63, 0.022),
+        0 0 0 92px rgba(214, 255, 63, 0.012);
+      content: "";
+      pointer-events: none;
+    }
+
+    .section-heading {
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 30px;
+    }
+
+    .section-kicker {
+      margin: 0 0 8px;
+      color: var(--orange);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(24px, 3vw, 36px);
+      font-weight: 820;
+      letter-spacing: -0.035em;
+    }
+
+    .section-note {
+      max-width: 360px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+      text-align: right;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      position: relative;
+      min-height: 126px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.025);
+      padding: 18px;
+    }
+
+    .stat-card.featured {
+      border-color: rgba(214, 255, 63, 0.24);
+      background: linear-gradient(145deg, rgba(214, 255, 63, 0.12), rgba(214, 255, 63, 0.025));
+    }
+
+    .stat-label {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+    }
+
+    .stat-value {
+      display: inline-block;
+      margin-top: 16px;
+      font-family: "DIN Alternate", "Arial Narrow", sans-serif;
+      font-size: clamp(30px, 4vw, 42px);
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      line-height: 1;
+    }
+
+    .stat-unit {
+      margin-left: 5px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .stat-trend {
+      position: absolute;
+      right: 16px;
+      bottom: 15px;
+      color: var(--accent);
+      font-size: 10px;
+      font-weight: 750;
+      letter-spacing: 0.08em;
+    }
+
+    .checkin-form {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: rgba(8, 11, 15, 0.5);
+      padding: clamp(18px, 3vw, 24px);
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    fieldset.field {
+      min-width: 0;
+      margin: 0;
+      border: 0;
+      padding: 0;
+    }
+
+    .field.date {
+      grid-column: span 3;
+    }
+
+    .field.type {
+      grid-column: span 3;
+    }
+
+    .field.duration {
+      grid-column: span 2;
+    }
+
+    .field.intensity {
+      grid-column: span 4;
+    }
+
+    .field.notes {
+      grid-column: span 12;
+    }
+
+    .field label {
+      color: #b9c2ca;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .field-label {
+      color: #b9c2ca;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .control {
+      width: 100%;
+      min-height: 48px;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      background: var(--surface-soft);
+      color: var(--text);
+      padding: 0 14px;
+      transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    .control:hover {
+      border-color: rgba(255, 255, 255, 0.24);
+    }
+
+    .control:focus {
+      border-color: rgba(214, 255, 63, 0.65);
+      outline: 0;
+      box-shadow: 0 0 0 3px rgba(214, 255, 63, 0.08);
+    }
+
+    select.control {
+      appearance: none;
+      background-image:
+        linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+        linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+      background-position:
+        calc(100% - 17px) 21px,
+        calc(100% - 12px) 21px;
+      background-repeat: no-repeat;
+      background-size: 5px 5px;
+      padding-right: 34px;
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.72);
+    }
+
+    .intensity-options {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+      min-height: 48px;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      background: var(--surface-soft);
+      padding: 4px;
+    }
+
+    .intensity-options input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .intensity-options label {
+      display: grid;
+      min-width: 0;
+      margin: 0;
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      place-items: center;
+      transition: color 160ms ease, background 160ms ease;
+      cursor: pointer;
+    }
+
+    .intensity-options input:checked + label {
+      background: rgba(214, 255, 63, 0.13);
+      color: var(--accent);
+    }
+
+    .intensity-options input:focus-visible + label {
+      outline: 2px solid var(--accent);
+      outline-offset: -1px;
+    }
+
+    .field.notes .control {
+      min-height: 78px;
+      resize: vertical;
+      padding: 13px 14px;
+      line-height: 1.55;
+    }
+
+    .control::placeholder {
+      color: #68727d;
+    }
+
+    .form-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      grid-column: span 12;
+      gap: 14px;
+      margin-top: 3px;
+    }
+
+    .form-hint {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin: 0;
+      color: #78828c;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .form-hint svg {
+      flex: 0 0 auto;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      min-height: 48px;
+      border-radius: 12px;
+      padding: 0 20px;
+      font-size: 13px;
+      font-weight: 800;
+      transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+    }
+
+    .button:active {
+      transform: translateY(0);
+    }
+
+    .button.primary {
+      background: var(--accent);
+      color: var(--accent-dark);
+      box-shadow: 0 10px 28px rgba(214, 255, 63, 0.12);
+    }
+
+    .button.primary:hover {
+      background: #e2ff78;
+    }
+
+    .button.secondary {
+      border: 1px solid var(--line-strong);
+      background: transparent;
+      color: #d8dde1;
+    }
+
+    .button.secondary:hover,
+    .button.secondary[aria-expanded="true"] {
+      border-color: rgba(214, 255, 63, 0.4);
+      background: rgba(214, 255, 63, 0.06);
+      color: var(--accent);
+    }
+
+    .button svg {
+      width: 17px;
+      height: 17px;
+    }
+
+    .history-panel {
+      display: grid;
+      grid-template-rows: 0fr;
+      opacity: 0;
+      transition: grid-template-rows 300ms ease, opacity 220ms ease, margin 300ms ease;
+    }
+
+    .history-panel.is-open {
+      grid-template-rows: 1fr;
+      opacity: 1;
+      margin-top: 18px;
+    }
+
+    .history-inner {
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .history-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: rgba(8, 11, 15, 0.48);
+      padding: clamp(18px, 3vw, 24px);
+    }
+
+    .history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .history-title {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: -0.01em;
+    }
+
+    .history-count {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 650;
+    }
+
+    .history-list {
+      display: grid;
+      gap: 9px;
+      max-height: 330px;
+      margin: 0;
+      overflow-y: auto;
+      padding: 0 3px 0 0;
+      list-style: none;
+      scrollbar-color: #39434e transparent;
+      scrollbar-width: thin;
+    }
+
+    .history-item {
+      display: grid;
+      grid-template-columns: 62px minmax(0, 1fr) auto auto 30px;
+      align-items: center;
+      gap: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.055);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.025);
+      padding: 13px 14px;
+    }
+
+    .history-date {
+      display: grid;
+      color: var(--accent);
+      font-family: "DIN Alternate", "Arial Narrow", sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      line-height: 1.1;
+      text-align: center;
+    }
+
+    .history-date small {
+      margin-top: 4px;
+      color: var(--muted);
+      font-family: "Avenir Next", "PingFang SC", sans-serif;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+
+    .history-info {
+      min-width: 0;
+    }
+
+    .history-info strong {
+      display: block;
+      overflow: hidden;
+      font-size: 13px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .history-info p {
+      overflow: hidden;
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.4;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .history-duration,
+    .badge {
+      border-radius: 999px;
+      padding: 6px 9px;
+      font-size: 10px;
+      font-weight: 750;
+      white-space: nowrap;
+    }
+
+    .history-duration {
+      background: rgba(255, 255, 255, 0.055);
+      color: #c2c9d0;
+    }
+
+    .badge {
+      background: rgba(214, 255, 63, 0.08);
+      color: var(--accent);
+    }
+
+    .badge.medium {
+      background: rgba(255, 170, 63, 0.09);
+      color: #ffbd66;
+    }
+
+    .badge.high {
+      background: rgba(255, 106, 53, 0.1);
+      color: #ff8c61;
+    }
+
+    .delete-record {
+      display: grid;
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: transparent;
+      color: #69737d;
+      place-items: center;
+      transition: color 160ms ease, background 160ms ease;
+    }
+
+    .delete-record:hover {
+      background: rgba(255, 107, 107, 0.08);
+      color: var(--danger);
+    }
+
+    .delete-record svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    .empty-state {
+      display: grid;
+      min-height: 130px;
+      border: 1px dashed var(--line-strong);
+      border-radius: 12px;
+      color: #707b86;
+      font-size: 12px;
+      text-align: center;
+      place-items: center;
+    }
+
+    .empty-state svg {
+      display: block;
+      width: 28px;
+      height: 28px;
+      margin: 0 auto 8px;
+      color: #414b56;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      max-width: calc(100% - 32px);
+      border: 1px solid rgba(214, 255, 63, 0.25);
+      border-radius: 999px;
+      background: #1c2412;
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4);
+      color: #e9ff9d;
+      padding: 11px 17px;
+      font-size: 12px;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, 12px);
+      transition: opacity 200ms ease, transform 200ms ease;
+    }
+
+    .toast.is-visible {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    .toast.error {
+      border-color: rgba(255, 107, 107, 0.26);
+      background: #281516;
+      color: #ffc0c0;
+    }
+
+    .site-footer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding-top: 22px;
+      color: #56606a;
+      font-size: 10px;
+      font-weight: 750;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .site-footer::before,
+    .site-footer::after {
+      width: 22px;
+      height: 1px;
+      background: currentColor;
+      content: "";
+    }
+
+    @media (max-width: 760px) {
+      .site-shell {
+        width: min(100% - 24px, 1080px);
+        padding-top: 24px;
+      }
+
+      .hero {
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 20px;
+        padding: 0 4px;
+      }
+
+      .brand {
+        gap: 12px;
+      }
+
+      .brand-mark {
+        width: 50px;
+        height: 50px;
+        flex-basis: 50px;
+        border-radius: 15px;
+      }
+
+      .brand-mark svg {
+        width: 27px;
+        height: 27px;
+      }
+
+      .season-chip {
+        display: none;
+      }
+
+      .training-section {
+        border-radius: 22px;
+        padding: 22px 16px;
+      }
+
+      .section-heading {
+        align-items: flex-start;
+        margin-bottom: 22px;
+      }
+
+      .section-note {
+        display: none;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .stat-card {
+        min-height: 108px;
+        padding: 15px;
+      }
+
+      .stat-value {
+        margin-top: 14px;
+      }
+
+      .checkin-form {
+        gap: 12px;
+        padding: 16px;
+      }
+
+      .field.date,
+      .field.type {
+        grid-column: span 6;
+      }
+
+      .field.duration {
+        grid-column: span 4;
+      }
+
+      .field.intensity {
+        grid-column: span 8;
+      }
+
+      .form-actions {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .form-hint {
+        order: 2;
+      }
+
+      .actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .button {
+        padding: 0 13px;
+      }
+
+      .history-item {
+        grid-template-columns: 50px minmax(0, 1fr) auto;
+        grid-template-rows: auto auto;
+        gap: 10px;
+      }
+
+      .history-date {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+      }
+
+      .history-info {
+        grid-column: 2;
+        grid-row: 1;
+      }
+
+      .history-duration {
+        display: none;
+      }
+
+      .badge {
+        grid-column: 3;
+        grid-row: 1;
+      }
+
+      .delete-record {
+        grid-column: 3;
+        grid-row: 2;
+      }
+    }
+
+    @media (max-width: 460px) {
+      h1 {
+        font-size: 24px;
+      }
+
+      .hero-subtitle {
+        font-size: 12px;
+      }
+
+      .stats-grid {
+        gap: 8px;
+      }
+
+      .stat-value {
+        font-size: 30px;
+      }
+
+      .field.date,
+      .field.type,
+      .field.duration,
+      .field.intensity {
+        grid-column: span 12;
+      }
+
+      .actions {
+        grid-template-columns: 1fr;
+      }
+
+      .button {
+        width: 100%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
 </head>
 <body>
-    <header>
-        <h1>规划</h1>
-        <p class="subtitle">记录这一年的训练、学习和想法</p>
-    </header>
-    <main>
-        <!-- 删除了原本的“目标CUBAL”板块 -->
-
-        <section>
-            <h2>篮球训练打卡</h2>
-            <p style="margin-bottom: 16px;">Goal: CUBAL</p>
-            <div class="input-group">
-                <div class="input-wrapper">
-                    <div class="input-label-row">
-                        <label>有球训练 (min)</label>
-                        <button type="button" class="history-btn" onclick="openHistory('ball')">历史</button>
-                    </div>
-                    <input type="number" id="ballInput" placeholder="例如 90">
-                </div>
-                <div class="input-wrapper">
-                    <div class="input-label-row">
-                        <label>功能性训练 (min)</label>
-                        <button type="button" class="history-btn" onclick="openHistory('func')">历史</button>
-                    </div>
-                    <input type="number" id="funcInput" placeholder="例如 45">
-                </div>
-            </div>
-            <div class="action-btns">
-                <button class="checkin-btn" onclick="addWorkout()">打卡</button>
-                <button class="clear-btn" onclick="clearData()">清空本周记录</button>
-            </div>
-            <div class="stats-panel">
-                <div class="stat-card">
-                    <div class="stat-label">本周有球训练总时长</div>
-                    <div class="stat-value"><span id="totalBall">0</span> <span class="stat-unit">分钟</span></div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">本周功能性训练总时长</div>
-                    <div class="stat-value"><span id="totalFunc">0</span> <span class="stat-unit">分钟</span></div>
-                </div>
-            </div>
-        </section>
-
-        <section>
-            <h2>供应链学习</h2>
-            <p>从采购、库存到物流配送，理解货物如何流动。把课堂知识连成一条完整的供应链。</p>
-        </section>
-
-        <section>
-            <h2>2026年赚到第一笔钱</h2>
-            <p>观察身边的需求和机会，记下值得尝试的点子。用小实验验证，而不是只停留在想象里。</p>
-        </section>
-    </main>
-    <footer>规划 · 个人主页</footer>
-
-    <!-- 历史记录弹窗 -->
-    <div id="historyModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modalTitle">训练历史记录</h3>
-                <button class="close-btn" onclick="closeHistory()">&times;</button>
-            </div>
-            <ul id="historyList" class="history-list"></ul>
+  <main class="site-shell">
+    <header class="hero">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9.25" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M3 12h18M12 2.75c3.1 2.55 4.65 5.63 4.65 9.25S15.1 18.7 12 21.25C8.9 18.7 7.35 15.62 7.35 12S8.9 5.3 12 2.75Z" stroke="currentColor" stroke-width="1.35"/>
+            <path d="M5.7 5.1c2.15 1.15 6.5 1.55 12.6.55M5.7 18.9c2.15-1.15 6.5-1.55 12.6-.55" stroke="currentColor" stroke-width="1.35"/>
+          </svg>
         </div>
-    </div>
+        <div>
+          <p class="eyebrow">Player Development</p>
+          <h1>CUBAL 训练计划</h1>
+          <p class="hero-subtitle">记录每一次汗水，见证通往 CUBAL 的每一步</p>
+        </div>
+      </div>
+      <div class="season-chip" aria-label="训练季进行中">
+        <span aria-hidden="true"></span>
+        2026 TRAINING SEASON
+      </div>
+    </header>
 
-    <script>
-        // 获取今天的日期字符串 YYYY-MM-DD
-        function getTodayStr() {
-            const d = new Date();
-            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    <section class="training-section" aria-labelledby="training-title">
+      <div class="section-heading">
+        <div>
+          <p class="section-kicker">Daily Check-in / 训练日志</p>
+          <h2 id="training-title">篮球训练打卡</h2>
+        </div>
+        <p class="section-note">专注每一次训练。把今天完成的内容留在记录里，持续累积属于你的进步。</p>
+      </div>
+
+      <div class="stats-grid" aria-label="打卡数据面板">
+        <article class="stat-card featured">
+          <span class="stat-label">本月训练</span>
+          <span class="stat-value" id="monthly-count">0</span>
+          <span class="stat-unit">次</span>
+          <span class="stat-trend">KEEP GOING</span>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">连续打卡</span>
+          <span class="stat-value" id="streak-count">0</span>
+          <span class="stat-unit">天</span>
+          <span class="stat-trend">STREAK</span>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">累计训练</span>
+          <span class="stat-value" id="total-count">0</span>
+          <span class="stat-unit">次</span>
+          <span class="stat-trend">ALL TIME</span>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">累计时长</span>
+          <span class="stat-value" id="total-minutes">0</span>
+          <span class="stat-unit">分钟</span>
+          <span class="stat-trend">EFFORT</span>
+        </article>
+      </div>
+
+      <form class="checkin-form" id="checkin-form" novalidate>
+        <div class="field date">
+          <label for="training-date">训练日期</label>
+          <input class="control" id="training-date" name="date" type="date" required>
+        </div>
+
+        <div class="field type">
+          <label for="training-type">训练项目</label>
+          <select class="control" id="training-type" name="type" required>
+            <option value="投篮训练">投篮训练</option>
+            <option value="运球训练">运球训练</option>
+            <option value="体能训练">体能训练</option>
+            <option value="力量训练">力量训练</option>
+            <option value="战术训练">战术训练</option>
+            <option value="实战对抗">实战对抗</option>
+            <option value="恢复训练">恢复训练</option>
+          </select>
+        </div>
+
+        <div class="field duration">
+          <label for="training-duration">训练时长</label>
+          <input class="control" id="training-duration" name="duration" type="number" min="1" max="600" step="1" inputmode="numeric" placeholder="分钟" required>
+        </div>
+
+        <fieldset class="field intensity">
+          <legend class="field-label">训练强度</legend>
+          <div class="intensity-options">
+            <input id="intensity-low" name="intensity" type="radio" value="轻松">
+            <label for="intensity-low">轻松</label>
+            <input id="intensity-medium" name="intensity" type="radio" value="适中" checked>
+            <label for="intensity-medium">适中</label>
+            <input id="intensity-high" name="intensity" type="radio" value="高强度">
+            <label for="intensity-high">高强度</label>
+          </div>
+        </fieldset>
+
+        <div class="field notes">
+          <label for="training-notes">训练记录 <span style="color:#69737d;font-weight:500">（选填）</span></label>
+          <textarea class="control" id="training-notes" name="notes" maxlength="160" placeholder="例如：三分球 200 次，命中率 42%；重点调整出手节奏。"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <p class="form-hint">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 3 5 6.5v5.2c0 4.25 2.8 7.6 7 9.3 4.2-1.7 7-5.05 7-9.3V6.5L12 3Z" stroke="currentColor" stroke-width="1.7"/>
+              <path d="m9.2 12 1.8 1.8 4-4.1" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            训练记录仅保存在当前浏览器中
+          </p>
+          <div class="actions">
+            <button class="button secondary" id="history-toggle" type="button" aria-expanded="false" aria-controls="history-panel">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 12a8 8 0 1 0 2.35-5.65L4 8.7M4 4v4.7h4.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M12 7.5V12l3 1.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+              </svg>
+              历史记录
+            </button>
+            <button class="button primary" type="submit">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              完成打卡
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <div class="history-panel" id="history-panel">
+        <div class="history-inner">
+          <div class="history-card">
+            <div class="history-header">
+              <h3 class="history-title">最近训练记录</h3>
+              <span class="history-count" id="history-count">共 0 条记录</span>
+            </div>
+            <ul class="history-list" id="history-list" aria-live="polite"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="site-footer">Every rep counts</footer>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="m5 12.5 4.2 4.2L19 6.8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span id="toast-message"></span>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const STORAGE_KEY = "cubal-training-checkins";
+      const form = document.getElementById("checkin-form");
+      const dateInput = document.getElementById("training-date");
+      const typeInput = document.getElementById("training-type");
+      const durationInput = document.getElementById("training-duration");
+      const notesInput = document.getElementById("training-notes");
+      const historyToggle = document.getElementById("history-toggle");
+      const historyPanel = document.getElementById("history-panel");
+      const historyList = document.getElementById("history-list");
+      const historyCount = document.getElementById("history-count");
+      const toast = document.getElementById("toast");
+      const toastMessage = document.getElementById("toast-message");
+
+      let records = loadRecords();
+      let toastTimer;
+
+      function localDateKey(date = new Date()) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+
+      function parseLocalDate(dateKey) {
+        const [year, month, day] = dateKey.split("-").map(Number);
+        return new Date(year, month - 1, day);
+      }
+
+      function normalizeRecord(record) {
+        if (!record || typeof record !== "object") return null;
+
+        const date = String(record.date || "");
+        const duration = Number(record.duration);
+        const type = String(record.type || "篮球训练");
+        const intensity = ["轻松", "适中", "高强度"].includes(record.intensity)
+          ? record.intensity
+          : "适中";
+
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(duration) || duration <= 0) {
+          return null;
         }
 
-        // 读取所有打卡记录
-        function loadRecords() {
-            const data = localStorage.getItem('basketballRecords');
-            return data ? JSON.parse(data) : [];
+        return {
+          id: String(record.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`),
+          date,
+          type,
+          duration: Math.min(Math.round(duration), 600),
+          intensity,
+          notes: String(record.notes || "").slice(0, 160),
+          createdAt: Number(record.createdAt) || Date.now()
+        };
+      }
+
+      function loadRecords() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+          if (!Array.isArray(saved)) return [];
+          return saved.map(normalizeRecord).filter(Boolean);
+        } catch (error) {
+          console.warn("无法读取训练记录：", error);
+          return [];
+        }
+      }
+
+      function saveRecords() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+          return true;
+        } catch (error) {
+          console.warn("无法保存训练记录：", error);
+          showToast("浏览器存储不可用，本次记录未能保存", true);
+          return false;
+        }
+      }
+
+      function sortRecords(items) {
+        return [...items].sort((a, b) => {
+          const dateDiff = b.date.localeCompare(a.date);
+          return dateDiff || b.createdAt - a.createdAt;
+        });
+      }
+
+      function getMonthlyCount() {
+        const now = new Date();
+        const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+        return records.filter((record) => record.date.startsWith(currentMonth)).length;
+      }
+
+      function getStreak() {
+        const uniqueDays = new Set(records.map((record) => record.date));
+        if (uniqueDays.size === 0) return 0;
+
+        let streak = 0;
+        let cursor = new Date();
+        cursor.setHours(0, 0, 0, 0);
+
+        // 当天尚未打卡时，从昨天开始计算，避免早上打开页面时连续记录显示为 0。
+        if (!uniqueDays.has(localDateKey(cursor))) {
+          cursor.setDate(cursor.getDate() - 1);
         }
 
-        // 保存打卡记录
-        function saveRecords(records) {
-            localStorage.setItem('basketballRecords', JSON.stringify(records));
+        while (uniqueDays.has(localDateKey(cursor))) {
+          streak += 1;
+          cursor.setDate(cursor.getDate() - 1);
         }
 
-        // 获取本周的起始时间（周一 00:00:00）
-        function getWeekStart() {
-            const now = new Date();
-            const day = now.getDay() || 7; 
-            const diff = now.getDate() - day + 1; 
-            const monday = new Date(now.setDate(diff));
-            monday.setHours(0, 0, 0, 0);
-            return monday.getTime();
+        return streak;
+      }
+
+      function updateStats() {
+        const totalMinutes = records.reduce((sum, record) => sum + record.duration, 0);
+        document.getElementById("monthly-count").textContent = getMonthlyCount();
+        document.getElementById("streak-count").textContent = getStreak();
+        document.getElementById("total-count").textContent = records.length;
+        document.getElementById("total-minutes").textContent = totalMinutes.toLocaleString("zh-CN");
+        historyCount.textContent = `共 ${records.length} 条记录`;
+      }
+
+      function intensityClass(intensity) {
+        if (intensity === "高强度") return "high";
+        if (intensity === "适中") return "medium";
+        return "";
+      }
+
+      function renderHistory() {
+        historyList.replaceChildren();
+
+        if (records.length === 0) {
+          const empty = document.createElement("li");
+          empty.className = "empty-state";
+          empty.innerHTML = `
+            <div>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.5"/>
+                <path d="M3.5 12h17M12 3.5c3 2.4 4.5 5.2 4.5 8.5S15 18.1 12 20.5C9 18.1 7.5 15.3 7.5 12S9 5.9 12 3.5Z" stroke="currentColor" stroke-width="1.2"/>
+              </svg>
+              还没有训练记录<br>完成第一次打卡，开启你的 CUBAL 征程
+            </div>
+          `;
+          historyList.appendChild(empty);
+          return;
         }
 
-        // 计算本周总时长
-        function calculateWeekTotals() {
-            const records = loadRecords();
-            const weekStart = getWeekStart();
-            let ballTotal = 0;
-            let funcTotal = 0;
+        sortRecords(records).forEach((record) => {
+          const date = parseLocalDate(record.date);
+          const item = document.createElement("li");
+          item.className = "history-item";
 
-            records.forEach(record => {
-                const recordTime = new Date(record.date).getTime();
-                // 只统计本周的数据
-                if (recordTime >= weekStart) {
-                    ballTotal += record.ball || 0;
-                    funcTotal += record.func || 0;
-                }
-            });
-            return { ball: ballTotal, func: funcTotal };
+          const dateBlock = document.createElement("div");
+          dateBlock.className = "history-date";
+          dateBlock.innerHTML = `
+            <span>${String(date.getDate()).padStart(2, "0")}</span>
+            <small>${date.getMonth() + 1}月 · 周${"日一二三四五六"[date.getDay()]}</small>
+          `;
+
+          const info = document.createElement("div");
+          info.className = "history-info";
+          const title = document.createElement("strong");
+          title.textContent = record.type;
+          const notes = document.createElement("p");
+          notes.textContent = record.notes || "完成今日训练，继续保持。";
+          info.append(title, notes);
+
+          const duration = document.createElement("span");
+          duration.className = "history-duration";
+          duration.textContent = `${record.duration} 分钟`;
+
+          const badge = document.createElement("span");
+          badge.className = `badge ${intensityClass(record.intensity)}`.trim();
+          badge.textContent = record.intensity;
+
+          const deleteButton = document.createElement("button");
+          deleteButton.className = "delete-record";
+          deleteButton.type = "button";
+          deleteButton.setAttribute("aria-label", `删除 ${record.date} 的${record.type}记录`);
+          deleteButton.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M5 7h14M9 7V4.8h6V7M7.3 7l.7 12h8l.7-12M10 10.5v5M14 10.5v5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          `;
+          deleteButton.addEventListener("click", () => deleteRecord(record.id));
+
+          item.append(dateBlock, info, duration, badge, deleteButton);
+          historyList.appendChild(item);
+        });
+      }
+
+      function showToast(message, isError = false) {
+        clearTimeout(toastTimer);
+        toastMessage.textContent = message;
+        toast.classList.toggle("error", isError);
+        toast.classList.add("is-visible");
+        toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2600);
+      }
+
+      function deleteRecord(id) {
+        const record = records.find((item) => item.id === id);
+        if (!record) return;
+        if (!window.confirm(`确定删除 ${record.date} 的“${record.type}”记录吗？`)) return;
+
+        records = records.filter((item) => item.id !== id);
+        if (saveRecords()) {
+          updateStats();
+          renderHistory();
+          showToast("训练记录已删除");
+        }
+      }
+
+      function toggleHistory(forceOpen) {
+        const shouldOpen = typeof forceOpen === "boolean"
+          ? forceOpen
+          : !historyPanel.classList.contains("is-open");
+
+        historyPanel.classList.toggle("is-open", shouldOpen);
+        historyToggle.setAttribute("aria-expanded", String(shouldOpen));
+
+        if (shouldOpen) {
+          renderHistory();
+          window.setTimeout(() => historyPanel.scrollIntoView({ behavior: "smooth", block: "nearest" }), 180);
+        }
+      }
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        const duration = Number(durationInput.value);
+        if (!dateInput.value) {
+          showToast("请选择训练日期", true);
+          dateInput.focus();
+          return;
         }
 
-        // 页面渲染更新
-        function render() {
-            const totals = calculateWeekTotals();
-            document.getElementById('totalBall').innerText = totals.ball;
-            document.getElementById('totalFunc').innerText = totals.func;
+        if (!Number.isFinite(duration) || duration < 1 || duration > 600) {
+          showToast("请输入 1–600 分钟之间的训练时长", true);
+          durationInput.focus();
+          return;
         }
 
-        // 打卡动作
-        function addWorkout() {
-            const ball = parseInt(document.getElementById('ballInput').value) || 0;
-            const func = parseInt(document.getElementById('funcInput').value) || 0;
+        const record = normalizeRecord({
+          id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          date: dateInput.value,
+          type: typeInput.value,
+          duration,
+          intensity: form.elements.intensity.value,
+          notes: notesInput.value.trim(),
+          createdAt: Date.now()
+        });
 
-            if (ball === 0 && func === 0) {
-                alert('请输入训练时长！');
-                return;
-            }
-
-            const today = getTodayStr();
-            const records = loadRecords();
-            const todayRecord = records.find(r => r.date === today);
-
-            if (todayRecord) {
-                // 当天已打卡，时长累加
-                todayRecord.ball = (todayRecord.ball || 0) + ball;
-                todayRecord.func = (todayRecord.func || 0) + func;
-            } else {
-                // 新的一天，新增记录
-                records.push({ date: today, ball: ball, func: func });
-            }
-
-            saveRecords(records);
-            document.getElementById('ballInput').value = '';
-            document.getElementById('funcInput').value = '';
-            render();
-            alert('打卡成功！');
+        if (!record) {
+          showToast("打卡信息不完整，请检查后重试", true);
+          return;
         }
 
-        // 清空本周记录
-        function clearData() {
-            if (!confirm('确定要清空本周的训练记录吗？此操作不可恢复。')) return;
-            
-            const weekStart = getWeekStart();
-            let records = loadRecords();
-            // 过滤掉本周的数据，保留上周及更早的数据
-            records = records.filter(record => {
-                return new Date(record.date).getTime() < weekStart;
-            });
-            saveRecords(records);
-            render();
-            alert('本周记录已清空。');
+        records.push(record);
+        if (!saveRecords()) {
+          records.pop();
+          return;
         }
 
-        // 打开历史记录弹窗（增加 type 参数区分）
-        function openHistory(type) {
-            const records = loadRecords();
-            const historyList = document.getElementById('historyList');
-            const modalTitle = document.getElementById('modalTitle');
-            historyList.innerHTML = '';
+        notesInput.value = "";
+        durationInput.value = "";
+        updateStats();
+        renderHistory();
+        showToast(`打卡成功，今天也向 CUBAL 迈近一步`);
+        toggleHistory(true);
+      });
 
-            // 动态调整标题
-            if (type === 'ball') {
-                modalTitle.innerText = '有球训练历史记录';
-            } else if (type === 'func') {
-                modalTitle.innerText = '功能性训练历史记录';
-            }
+      historyToggle.addEventListener("click", () => toggleHistory());
 
-            if (records.length === 0) {
-                historyList.innerHTML = '<li class="empty-msg">暂无打卡记录</li>';
-            } else {
-                // 按日期倒序排列
-                const sortedRecords = records.sort((a, b) => new Date(b.date) - new Date(a.date));
-                let hasValidRecord = false;
+      dateInput.max = localDateKey();
 
-                sortedRecords.forEach(record => {
-                    if (type === 'ball' && record.ball > 0) {
-                        hasValidRecord = true;
-                        const li = document.createElement('li');
-                        li.innerHTML = `
-                            <span class="history-date">${record.date}</span>
-                            <span class="history-detail">有球训练：${record.ball} min</span>
-                        `;
-                        historyList.appendChild(li);
-                    } else if (type === 'func' && record.func > 0) {
-                        hasValidRecord = true;
-                        const li = document.createElement('li');
-                        li.innerHTML = `
-                            <span class="history-date">${record.date}</span>
-                            <span class="history-detail">功能性训练：${record.func} min</span>
-                        `;
-                        historyList.appendChild(li);
-                    }
-                });
+      // Set the latest valid training date before filling the default value.
+      if (!dateInput.value) {
+        dateInput.value = localDateKey();
+      }
 
-                if (!hasValidRecord) {
-                    historyList.innerHTML = '<li class="empty-msg">暂无该类型的打卡记录</li>';
-                }
-            }
-            document.getElementById('historyModal').style.display = 'flex';
-        }
-
-        // 关闭历史记录弹窗
-        function closeHistory() {
-            document.getElementById('historyModal').style.display = 'none';
-        }
-
-        // 点击模态框外部关闭
-        window.onclick = function(event) {
-            const modal = document.getElementById('historyModal');
-            if (event.target === modal) {
-                modal.style.display = 'none';
-            }
-        }
-
-        // 初始化页面
-        render();
-    </script>
+      updateStats();
+      renderHistory();
+    })();
+  </script>
 </body>
 </html>
