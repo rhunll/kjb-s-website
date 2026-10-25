@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="一个专注、轻盈的雅思备考空间，记录每日任务、四科目标、真题模考与错题灵感。"
+    />
+    <meta name="theme-color" content="#0b0d10" />
+    <title>IELTS 冲刺指挥室</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" aria-hidden="true"></div>
+    <div class="noise" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="返回页面顶部">
+        <span class="brand-mark" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
+        <span class="brand-name">FOCUS / IELTS</span>
+      </a>
+      <div class="header-meta">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span>浏览器本地存储</span>
+        <span class="meta-divider" aria-hidden="true"></span>
+        <span id="current-date">--</span>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <p class="eyebrow"><span>PERSONAL STUDY SYSTEM</span> / 2027</p>
+          <h1 id="page-title">
+            IELTS
+            <span>冲刺指挥室</span>
+          </h1>
+          <p class="hero-description">
+            把目标拆进每一天。记录练习，校准方向，<br />
+            让每一次投入都有迹可循。
+          </p>
+
+          <div class="hero-summary" aria-label="今日概览">
+            <div class="summary-item">
+              <span class="summary-label">今日任务</span>
+              <strong id="summary-tasks">0 / 0</strong>
+            </div>
+            <div class="summary-line" aria-hidden="true"></div>
+            <div class="summary-item">
+              <span class="summary-label">最近模考</span>
+              <strong id="summary-mock">尚未记录</strong>
+            </div>
+          </div>
+        </div>
+
+        <aside class="countdown-card" aria-label="考试倒计时">
+          <div class="countdown-topline">
+            <span>距离目标考试</span>
+            <span class="target-date">06 FEB 2027</span>
+          </div>
+          <div class="countdown-visual">
+            <svg class="countdown-ring" viewBox="0 0 180 180" aria-hidden="true">
+              <circle class="ring-track" cx="90" cy="90" r="79"></circle>
+              <circle id="ring-progress" class="ring-progress" cx="90" cy="90" r="79"></circle>
+            </svg>
+            <div class="countdown-value">
+              <strong id="countdown-days">--</strong>
+              <span>天</span>
+            </div>
+          </div>
+          <div class="countdown-caption">
+            <p>SATURDAY · 上海</p>
+            <p id="countdown-note">保持专注，按自己的节奏前进。</p>
+          </div>
+        </aside>
+      </section>
+
+      <div class="dashboard-grid">
+        <section class="panel panel-tasks reveal" aria-labelledby="tasks-title">
+          <div class="panel-heading">
+            <div>
+              <span class="section-index">01 / TODAY</span>
+              <h2 id="tasks-title">今日任务</h2>
+            </div>
+            <div class="task-progress-pill" id="task-progress-pill">0%</div>
+          </div>
+
+          <form class="task-form" id="task-form" autocomplete="off">
+            <label class="sr-only" for="task-input">添加今日任务</label>
+            <span class="input-plus" aria-hidden="true">+</span>
+            <input
+              id="task-input"
+              name="task"
+              type="text"
+              maxlength="120"
+              placeholder="添加一项任务，例如：精听 C18 Test 2 Section 3"
+              required
+            />
+            <button class="button button-primary" type="submit">添加</button>
+          </form>
+
+          <div class="task-meta">
+            <p id="task-encouragement">从一项小任务开始。</p>
+            <button class="text-button hidden" id="clear-completed" type="button">
+              清除已完成
+            </button>
+          </div>
+
+          <ul class="task-list" id="task-list" aria-live="polite"></ul>
+
+          <div class="empty-state" id="task-empty">
+            <span class="empty-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M5 12.5 9.2 17 19 7" />
+              </svg>
+            </span>
+            <p>今天的清单还是空的</p>
+            <span>写下一件最重要的事，然后开始。</span>
+          </div>
+        </section>
+
+        <section class="panel panel-scores reveal" aria-labelledby="scores-title">
+          <div class="panel-heading">
+            <div>
+              <span class="section-index">02 / SCORE</span>
+              <h2 id="scores-title">四科进度</h2>
+            </div>
+            <span class="panel-hint">目标 / 预估</span>
+          </div>
+
+          <div class="score-grid" id="score-grid">
+            <article class="score-card" data-subject="listening">
+              <div class="score-card-head">
+                <div class="subject-icon icon-listening" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M4 14v-2a8 8 0 0 1 16 0v2" />
+                    <path d="M18 15h2v4h-2a2 2 0 0 1-2-2v-2h2Zm-12 0H4v4h2a2 2 0 0 0 2-2v-2H6Z" />
+                  </svg>
+                </div>
+                <span class="subject-code">L</span>
+              </div>
+              <div class="subject-name">
+                <h3>听力</h3>
+                <span>Listening</span>
+              </div>
+              <div class="score-inputs">
+                <label>
+                  <span>目标</span>
+                  <input class="score-input" data-field="target" type="number" min="1" max="9" step="0.5" inputmode="decimal" placeholder="--" aria-label="听力目标分数" />
+                </label>
+                <span class="score-separator">/</span>
+                <label>
+                  <span>当前</span>
+                  <input class="score-input" data-field="current" type="number" min="1" max="9" step="0.5" inputmode="decimal" placeholder="--" aria-label="听力当前预估分数" />
+                </label>
+              </div>
+              <div class="mini-track" aria-hidden="true"><span></span></div>
+            </article>
+
+            <article class="score-card" data-subject="reading">
+              <div class="score-card-head">
+                <div class="subject-icon icon-reading" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M3.5 5.5h6a3 3 0 0 1 2.5 1.3 3 3 0 0 1 2.5-1.3h6v13h-6a3 3 0 0 0-2.5 1.3 3 3 0 0 0-2.5-1.3h-6v-13Z" />
+                    <path d="M12 6.8v13" />
+                  </svg>
+                </div>
+                <span class="subject-code">R</span>
+              </div>
+              <div class="subject-name">
+                <h3>阅读</h3>
+                <span>Reading</span>
+              </div>
+              <div class="score-inputs">
+                <label>
+                  <span>目标</span>
+                  <input class="score-input" data-field="target" type="number" min="1" max="9" step="0.5" inputmode="decimal" placeholder="--" aria-label="阅读目标分数" />
+                </label>
+                <span class="score-separator">/</span>
+                <label>
+                  <span>当前</span>
+                  <input class="score-input" data-field="current" type="number" min="1" max="9" step="0.5" inputmode="decimal" placeholder="--" aria-label="阅读当前预估分数" />
+                </label>
+              </div>
+              <div class="mini-track" aria-hidden="true"><span></span></div>
+            </article>
+
+            <article class="score-card" data-subject="writing">
+              <div class="score-card-head">
+                <div class="subject-icon icon-writing" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="m15.5 5.2 3.3 3.3M4.5 19.5l1-4.2L16.8 4a1.8 1.8 0 0 1 2.5 0l.7.7a1.8 1.8 0 0 1 0 2.5L8.7 18.5l-4.2 1Z" />
+                    <path d="m5.5 15.3 3.2 3.2" />
+                  </svg>
+                </div>
+                <span class="subject-code">W</span>
+              </div>
+              <div class="subject-name">
+                <h3>写作</h3>
+                <span>Writing</span>
+              </div>
+              <div class="score-inputs">
+                <label>
+                  <span>目标</span>
+                  <input class="score-input" data-field="target" type="number" min="1" max="9" step="0.5" inputmode="decimal" placeholder="--" aria-label="写作目标分数" />
+                </label>
+                <span class="score-separator">/</span>
+                <label>
+                  <span>当前</span>
+                  <input class="score-input" data-field="current" type="number" min="1" max="9" step="0.5" inputmode="decimal" placeholder="--" aria-label="写作当前预估分数" />
+                </label>
+              </div>
+              <div class="mini-track" aria-hidden="true"><span></span></div>
+            </article>
+
+            <article class="score-card" data-subject="speaking">
+              <div class="score-card-head">
+                <div class="subject-icon icon-speaking" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <rect x="8" y="3" width="8" height="12" rx="4" />
+                    <path d="M5 11a7 7 0 0 0 14 0M12 18v3M8.5 21h7" />
+                  </svg>
+                </div>
+                <span class="subject-code">S</span>
+              </div>
+              <div class="subject-name">
+                <h3>口语</h3>
+                <span>Speaking</span>
+              </div>
+              <div class="score-inputs">
+                <label>
+                  <span>目标</span>
+                  <input class="score-input" data-field="target" type="number" min="1" max="9" step="0.5" inputmode="decimal" placeholder="--" aria-label="口语目标分数" />
+                </label>
+                <span class="score-separator">/</span>
+                <label>
+                  <span>当前</span>
+                  <input class="score-input" data-field="current" type="number" min="1" max="9" step="0.5" inputmode="decimal" placeholder="--" aria-label="口语当前预估分数" />
+                </label>
+              </div>
+              <div class="mini-track" aria-hidden="true"><span></span></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel panel-mocks reveal" aria-labelledby="mocks-title">
+          <div class="panel-heading mock-heading">
+            <div>
+              <span class="section-index">03 / PRACTICE</span>
+              <h2 id="mocks-title">真题模考记录</h2>
+            </div>
+            <div class="mock-summary" aria-label="模考统计">
+              <span>累计 <strong id="mock-count">0</strong> 套</span>
+              <span class="meta-divider" aria-hidden="true"></span>
+              <span>均分 <strong id="mock-average">--</strong></span>
+            </div>
+          </div>
+
+          <form class="mock-form" id="mock-form" autocomplete="off">
+            <label class="mock-field mock-name">
+              <span>套题名称</span>
+              <input id="mock-name" type="text" maxlength="40" placeholder="如 C18 Test 1" required />
+            </label>
+            <label class="mock-field">
+              <span>听力 / 40</span>
+              <input id="mock-listening" type="number" min="0" max="40" step="1" inputmode="numeric" placeholder="0" required />
+            </label>
+            <span class="preview-band" id="listening-preview" aria-live="polite">--</span>
+            <label class="mock-field">
+              <span>阅读 / 40</span>
+              <input id="mock-reading" type="number" min="0" max="40" step="1" inputmode="numeric" placeholder="0" required />
+            </label>
+            <span class="preview-band" id="reading-preview" aria-live="polite">--</span>
+            <button class="button button-primary mock-submit" type="submit">记录</button>
+          </form>
+          <p class="form-footnote">
+            <span aria-hidden="true">i</span>
+            阅读分数按 A 类评分标准估算，听力按常见真题换算区间估算。
+          </p>
+
+          <div class="table-wrap">
+            <table class="mock-table">
+              <thead>
+                <tr>
+                  <th scope="col">套题 / 日期</th>
+                  <th scope="col">听力原始分</th>
+                  <th scope="col">听力分数</th>
+                  <th scope="col">阅读原始分</th>
+                  <th scope="col">阅读分数</th>
+                  <th scope="col">平均</th>
+                  <th scope="col"><span class="sr-only">操作</span></th>
+                </tr>
+              </thead>
+              <tbody id="mock-list"></tbody>
+            </table>
+            <div class="empty-state table-empty" id="mock-empty">
+              <span class="empty-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                  <path d="M5 4h14v16H5zM8 8h8M8 12h8M8 16h5" />
+                </svg>
+              </span>
+              <p>还没有模考记录</p>
+              <span>完成一套真题，把结果留在这里。</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel panel-notes reveal" aria-labelledby="notes-title">
+          <div class="panel-heading">
+            <div>
+              <span class="section-index">04 / INSIGHT</span>
+              <h2 id="notes-title">错题与灵感</h2>
+            </div>
+            <span class="panel-hint" id="note-count">0 条记录</span>
+          </div>
+
+          <form class="note-form" id="note-form">
+            <label class="sr-only" for="note-input">记录错题或灵感</label>
+            <textarea
+              id="note-input"
+              maxlength="600"
+              rows="5"
+              placeholder="记录一个错因、表达或顿悟时刻……"
+              required
+            ></textarea>
+            <div class="note-form-foot">
+              <span><span id="note-chars">0</span> / 600</span>
+              <button class="button button-primary" type="submit">
+                保存记录
+                <svg viewBox="0 0 20 20" aria-hidden="true">
+                  <path d="M4 10h11M11 5l5 5-5 5" />
+                </svg>
+              </button>
+            </div>
+          </form>
+
+          <div class="notes-list" id="notes-list" aria-live="polite"></div>
+          <div class="empty-state notes-empty" id="notes-empty">
+            <span class="empty-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M6 3h12v18l-6-3.5L6 21V3Z" />
+              </svg>
+            </span>
+            <p>灵感稍纵即逝</p>
+            <span>把值得复盘的内容记下来。</span>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <p>
+        <span class="status-dot" aria-hidden="true"></span>
+        数据仅存储在当前浏览器
+      </p>
+      <p>BUILT FOR FOCUS · <span id="footer-year">2026</span></p>
+    </footer>
+
+    <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+    <template id="task-template">
+      <li class="task-item">
+        <button class="task-check" type="button" aria-label="标记任务完成">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5 9.2 17 19 7" /></svg>
+        </button>
+        <span class="task-text"></span>
+        <button class="icon-button task-delete" type="button" aria-label="删除任务">
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10M9 9v4M11 9v4" />
+          </svg>
+        </button>
+      </li>
+    </template>
+
+    <script src="script.js"></script>
+  </body>
+</html>
