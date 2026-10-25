@@ -14,9 +14,9 @@
   --accent-soft: rgba(199, 240, 110, 0.12);
   --accent-text: #d8ff8a;
   --danger: #ff8b83;
-  --blue: #82a7ff;
+  --blue: #4a3f35;
   --amber: #e9b96e;
-  --pink: #e698b4;
+  --pink: #4a3f35;
   --radius: 20px;
   --radius-small: 12px;
   --shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
@@ -1640,7 +1640,7 @@ textarea:focus-visible {
 
 /* ============================================================
    Light editorial theme
-   Palette: white / grey / coffee #8B7355 / navy #000080
+   Palette: white / grey / coffee / deep warm brown
    ============================================================ */
 
 :root {
@@ -1659,12 +1659,11 @@ textarea:focus-visible {
   --accent-deep: #6d5741;
   --accent-soft: rgba(139, 115, 85, 0.09);
   --accent-text: #745c42;
-  --navy: #000080;
-  --navy-soft: rgba(0, 0, 128, 0.055);
+  --ink: #4a3f35;
   --danger: #8c4d46;
-  --blue: #000080;
+  --blue: #4a3f35;
   --amber: #8b7355;
-  --pink: #000080;
+  --pink: #4a3f35;
   --shadow: 0 20px 55px rgba(62, 49, 38, 0.075);
 }
 
@@ -1713,8 +1712,8 @@ body {
 }
 
 .status-dot {
-  background: var(--navy);
-  box-shadow: 0 0 0 4px rgba(0, 0, 128, 0.07);
+  background: var(--ink);
+  box-shadow: 0 0 0 4px rgba(74, 63, 53, 0.07);
 }
 
 .meta-divider,
@@ -1733,13 +1732,13 @@ body {
 }
 
 .eyebrow span {
-  color: var(--navy);
+  color: var(--ink);
 }
 
 h1 {
   max-width: 780px;
   margin-bottom: 32px;
-  color: var(--text);
+  color: #4a3f35;
   font-size: clamp(88px, 11vw, 148px);
   font-weight: 400;
   line-height: 0.82;
@@ -1796,7 +1795,7 @@ h1 {
 }
 
 .countdown-value strong {
-  color: var(--navy);
+  color: var(--ink);
 }
 
 .countdown-value span {
@@ -1955,7 +1954,7 @@ textarea::placeholder {
 
 .icon-reading,
 .icon-speaking {
-  color: var(--navy);
+  color: var(--ink);
 }
 
 .subject-code,
@@ -1989,7 +1988,7 @@ textarea::placeholder {
 
 [data-subject="reading"] .mini-track span,
 [data-subject="speaking"] .mini-track span {
-  background: var(--navy);
+  background: var(--ink);
 }
 
 .mock-summary,
@@ -2094,10 +2093,10 @@ textarea::placeholder {
 }
 
 .toast {
-  border-color: rgba(0, 0, 128, 0.16);
+  border-color: rgba(74, 63, 53, 0.16);
   color: #ffffff;
-  background: var(--navy);
-  box-shadow: 0 14px 38px rgba(0, 0, 128, 0.18);
+  background: var(--ink);
+  box-shadow: 0 14px 38px rgba(74, 63, 53, 0.18);
 }
 
 .toast::before {
@@ -2108,7 +2107,7 @@ button:focus-visible,
 a:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
-  outline-color: var(--navy);
+  outline-color: var(--ink);
 }
 
 @media (max-width: 800px) {
