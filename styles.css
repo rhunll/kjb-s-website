@@ -1777,9 +1777,7 @@ textarea:focus-visible {
 }
 
 .vocab-control {
-  display: grid;
-  grid-template-columns: minmax(100px, 1fr) auto;
-  gap: 9px;
+  display: block;
 }
 
 .vocab-input-wrap {
@@ -1827,9 +1825,117 @@ textarea:focus-visible {
   font-size: 10px;
 }
 
-.vocab-control .button {
-  min-width: 92px;
+.vocab-pages-label {
+  margin-top: 13px;
+}
+
+.vocab-pages-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  color: var(--text);
+  background: #ffffff;
+  font-size: 12px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.vocab-pages-input:focus {
+  border-color: rgba(139, 115, 85, 0.7);
+  box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.07);
+}
+
+.vocab-pages-input::placeholder {
+  color: #8f857c;
+}
+
+.vocab-submit {
+  width: 100%;
   height: 42px;
+  margin-top: 11px;
+}
+
+.vocab-recent {
+  margin-top: 17px;
+  padding-top: 17px;
+  border-top: 1px solid var(--line);
+}
+
+.vocab-recent-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 9px;
+}
+
+.vocab-recent-head h3 {
+  margin: 0;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+
+.vocab-recent-head > span {
+  color: var(--text-muted);
+  font-size: 9px;
+}
+
+.vocab-recent-list {
+  display: grid;
+}
+
+.vocab-recent-empty {
+  margin: 0;
+  padding: 16px 18px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 11px;
+  color: var(--text-muted);
+  background: #fbfaf8;
+  font-size: 10px;
+  text-align: center;
+}
+
+.vocab-record {
+  display: grid;
+  grid-template-columns: 76px 12px minmax(110px, 0.65fr) 12px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 12px 3px;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-secondary);
+  font-size: 11px;
+  animation: item-in 220ms ease both;
+}
+
+.vocab-record:last-child {
+  border-bottom: 0;
+}
+
+.vocab-record-date {
+  color: var(--accent-text);
+  font-family: var(--serif);
+  font-size: 12px;
+  font-style: italic;
+  font-variant-numeric: tabular-nums;
+}
+
+.vocab-record-pages {
+  color: var(--text);
+}
+
+.vocab-record-pages-numbers {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.vocab-record-divider {
+  color: #c5bbb1;
+  font-size: 9px;
+  text-align: center;
 }
 
 .vocab-footnote {
@@ -1897,11 +2003,23 @@ textarea:focus-visible {
   }
 
   .vocab-control {
-    grid-template-columns: 1fr;
+    display: block;
   }
 
-  .vocab-control .button {
-    width: 100%;
+  .vocab-record {
+    grid-template-columns: 72px minmax(0, 1fr);
+    gap: 4px 12px;
+    padding-block: 11px;
+  }
+
+  .vocab-record-divider {
+    display: none;
+  }
+
+  .vocab-record-pages-numbers {
+    grid-column: 1 / -1;
+    padding-left: 84px;
+    color: var(--text-muted);
   }
 }
 

@@ -289,9 +289,28 @@
                   />
                   <span>页</span>
                 </span>
-                <button class="button button-primary" type="submit">打卡记录</button>
               </div>
+              <label class="vocab-pages-label" for="vocab-pages">具体页码（选填）</label>
+              <input
+                class="vocab-pages-input"
+                id="vocab-pages"
+                name="pageNumbers"
+                type="text"
+                maxlength="60"
+                placeholder="具体页码 (例如: p1-p5)"
+              />
+              <button class="button button-primary vocab-submit" type="submit">打卡记录</button>
             </form>
+          </div>
+
+          <div class="vocab-recent" aria-labelledby="vocab-recent-title">
+            <div class="vocab-recent-head">
+              <h3 id="vocab-recent-title">最近打卡记录</h3>
+              <span>最近 7 天</span>
+            </div>
+            <div class="vocab-recent-list" id="vocab-recent-list" aria-live="polite">
+              <p class="vocab-recent-empty">暂无打卡记录</p>
+            </div>
           </div>
           <p class="vocab-footnote">按自然日记录，今日数据会在新的一天自动重新开始计数。</p>
         </section>

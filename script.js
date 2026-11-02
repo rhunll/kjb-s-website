@@ -16,6 +16,7 @@
     vocab: {
       daily: {},
       total: 0,
+      records: [],
     },
     mocks: [],
     notes: [],
@@ -43,8 +44,10 @@
     scoreCards: [...document.querySelectorAll(".score-card")],
     vocabForm: document.querySelector("#vocab-form"),
     vocabInput: document.querySelector("#vocab-input"),
+    vocabPages: document.querySelector("#vocab-pages"),
     vocabToday: document.querySelector("#vocab-today"),
     vocabTotal: document.querySelector("#vocab-total"),
+    vocabRecentList: document.querySelector("#vocab-recent-list"),
     mockForm: document.querySelector("#mock-form"),
     mockName: document.querySelector("#mock-name"),
     mockListening: document.querySelector("#mock-listening"),
@@ -87,6 +90,30 @@
       }, {});
       const savedTotal = Number(loadedVocab.total);
       const derivedTotal = Object.values(cleanDaily).reduce((sum, pages) => sum + pages, 0);
+      const cleanRecords = (Array.isArray(loadedVocab.records) ? loadedVocab.records : [])
+        .map((record) => {
+          if (!record || typeof record !== "object") return null;
+          const date = stringValue(record.date);
+          const pages = Number(record.pages);
+          if (
+            !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+            !Number.isInteger(pages) ||
+            pages <= 0
+          ) {
+            return null;
+          }
+          const createdAt = Number.isNaN(Date.parse(record.createdAt))
+            ? `${date}T00:00:00`
+            : new Date(record.createdAt).toISOString();
+          return {
+            id: stringValue(record.id) || uid(),
+            date,
+            pages,
+            pageNumbers: stringValue(record.pageNumbers).trim().slice(0, 60),
+            createdAt,
+          };
+        })
+        .filter(Boolean);
 
       return {
         tasks: Array.isArray(saved.tasks) ? saved.tasks : fresh.tasks,
@@ -100,6 +127,7 @@
         vocab: {
           daily: cleanDaily,
           total: Number.isInteger(savedTotal) && savedTotal >= derivedTotal ? savedTotal : derivedTotal,
+          records: cleanRecords,
         },
         mocks: Array.isArray(saved.mocks) ? saved.mocks : fresh.mocks,
         notes: Array.isArray(saved.notes) ? saved.notes : fresh.notes,
@@ -314,11 +342,68 @@
     const todayPages = state.vocab.daily[localDateKey()] || 0;
     elements.vocabToday.textContent = String(todayPages);
     elements.vocabTotal.textContent = String(state.vocab.total);
+    renderVocabRecords();
+  }
+
+  function formatVocabDate(dateKey) {
+    const [, month, day] = dateKey.split("-");
+    return `${month}月${day}日`;
+  }
+
+  function renderVocabRecords() {
+    const today = startOfDay();
+    const cutoff = new Date(today);
+    cutoff.setDate(cutoff.getDate() - 6);
+    const cutoffKey = localDateKey(cutoff);
+    const todayKey = localDateKey(today);
+    const recentRecords = state.vocab.records
+      .filter((record) => record.date >= cutoffKey && record.date <= todayKey)
+      .sort((first, second) => second.createdAt.localeCompare(first.createdAt));
+
+    elements.vocabRecentList.replaceChildren();
+
+    if (recentRecords.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "vocab-recent-empty";
+      empty.textContent = "暂无打卡记录";
+      elements.vocabRecentList.append(empty);
+      return;
+    }
+
+    recentRecords.forEach((record) => {
+      const row = document.createElement("div");
+      row.className = "vocab-record";
+
+      const date = document.createElement("time");
+      date.className = "vocab-record-date";
+      date.dateTime = record.date;
+      date.textContent = formatVocabDate(record.date);
+
+      const pages = document.createElement("span");
+      pages.className = "vocab-record-pages";
+      pages.textContent = `背诵 ${record.pages} 页`;
+
+      const pageNumbers = document.createElement("span");
+      pageNumbers.className = "vocab-record-pages-numbers";
+      pageNumbers.textContent = `页码: ${record.pageNumbers || "暂无"}`;
+
+      const firstDivider = document.createElement("span");
+      firstDivider.className = "vocab-record-divider";
+      firstDivider.textContent = "|";
+
+      const secondDivider = document.createElement("span");
+      secondDivider.className = "vocab-record-divider";
+      secondDivider.textContent = "|";
+
+      row.append(date, firstDivider, pages, secondDivider, pageNumbers);
+      elements.vocabRecentList.append(row);
+    });
   }
 
   function addVocabRecord(event) {
     event.preventDefault();
     const pages = Number(elements.vocabInput.value);
+    const pageNumbers = elements.vocabPages.value.trim();
 
     if (!Number.isInteger(pages) || pages <= 0) {
       showToast("请输入大于 0 的整数页数");
@@ -329,6 +414,13 @@
     const today = localDateKey();
     state.vocab.daily[today] = (state.vocab.daily[today] || 0) + pages;
     state.vocab.total += pages;
+    state.vocab.records.push({
+      id: uid(),
+      date: today,
+      pages,
+      pageNumbers,
+      createdAt: new Date().toISOString(),
+    });
     saveState();
     renderVocab();
     elements.vocabForm.reset();
