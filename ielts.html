@@ -315,6 +315,115 @@
           <p class="vocab-footnote">按自然日记录，今日数据会在新的一天自动重新开始计数。</p>
         </section>
 
+        <section class="panel panel-word-library reveal" aria-labelledby="word-library-title">
+          <div class="panel-heading">
+            <div>
+              <span class="section-index">03A / LIBRARY</span>
+              <h2 id="word-library-title">词库管理</h2>
+            </div>
+            <span class="library-count"><strong id="word-count">0</strong> 个单词</span>
+          </div>
+
+          <div class="word-library-layout">
+            <form class="word-import-form" id="word-import-form">
+              <label for="word-import-input">批量导入单词</label>
+              <p class="word-format-hint">每行一个单词，严格使用：英文,词性,中文</p>
+              <textarea
+                id="word-import-input"
+                rows="7"
+                spellcheck="false"
+                placeholder="abandon,v.,放弃&#10;benefit,n.,益处&#10;delicate,adj.,精美的"
+              ></textarea>
+              <div class="word-import-actions">
+                <select id="word-import-mode" aria-label="导入方式">
+                  <option value="append">追加到现有词库</option>
+                  <option value="replace">覆盖现有词库</option>
+                </select>
+                <button class="button button-primary" id="word-import-button" type="submit">
+                  导入词库
+                </button>
+              </div>
+              <p class="word-import-message" id="word-import-message" aria-live="polite"></p>
+            </form>
+
+            <div class="word-library-panel">
+              <div class="word-library-head">
+                <span>词库列表</span>
+                <span>按字母排序</span>
+              </div>
+              <div class="word-library-list" id="word-library-list" aria-live="polite">
+                <p class="word-library-empty">暂无单词，先导入一份自己的词库。</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel panel-word-test reveal" aria-labelledby="word-test-title">
+          <div class="test-heading">
+            <div>
+              <span class="section-index">03B / TEST</span>
+              <h2 id="word-test-title">单词自测</h2>
+            </div>
+            <div class="test-actions">
+              <button class="button button-primary" id="test-start" type="button">开始测试</button>
+              <button class="button button-secondary" id="test-stop" type="button" disabled>
+                结束测试
+              </button>
+            </div>
+          </div>
+
+          <div class="test-dashboard" aria-label="本次测试实时数据">
+            <div>
+              <span>已答</span>
+              <strong><span id="test-answered">0</span> 题</strong>
+            </div>
+            <div>
+              <span>正确</span>
+              <strong><span id="test-correct">0</span> 题</strong>
+            </div>
+            <div>
+              <span>错误</span>
+              <strong><span id="test-wrong">0</span> 题</strong>
+            </div>
+            <div>
+              <span>正确率</span>
+              <strong><span id="test-accuracy">0</span>%</strong>
+            </div>
+          </div>
+
+          <div class="test-stage">
+            <div class="test-idle" id="test-idle">
+              <span class="test-idle-label">RANDOM PRACTICE</span>
+              <strong id="test-idle-title">准备好开始了吗？</strong>
+              <p id="test-idle-description">系统会从中译英与英译中题型中随机抽题，直到词库抽完。</p>
+            </div>
+
+            <div class="test-question" id="test-question" hidden>
+              <div class="test-question-meta">
+                <span id="test-question-number">QUESTION 01</span>
+                <span class="test-type-pill" id="test-question-type">中译英</span>
+              </div>
+              <div class="test-prompt" id="test-prompt"></div>
+
+              <form class="test-spelling" id="spelling-form" autocomplete="off" hidden>
+                <label class="sr-only" for="spelling-input">输入英文单词</label>
+                <input
+                  id="spelling-input"
+                  type="text"
+                  spellcheck="false"
+                  autocapitalize="none"
+                  placeholder="输入英文单词"
+                  required
+                />
+                <button class="button button-primary" type="submit">提交答案</button>
+              </form>
+
+              <div class="test-choices" id="test-choices" hidden></div>
+              <p class="test-feedback" id="test-feedback" aria-live="polite"></p>
+            </div>
+          </div>
+        </section>
+
         <section class="panel panel-mocks reveal" aria-labelledby="mocks-title">
           <div class="panel-heading mock-heading">
             <div>
@@ -415,6 +524,38 @@
             </span>
             <p>灵感稍纵即逝</p>
             <span>把值得复盘的内容记下来。</span>
+          </div>
+        </section>
+
+        <section class="panel panel-vocab-review reveal" aria-labelledby="vocab-review-title">
+          <div class="panel-heading">
+            <div>
+              <span class="section-index">06 / REVIEW</span>
+              <h2 id="vocab-review-title">测试历史与熟练度</h2>
+            </div>
+            <span class="panel-hint">记录每一次练习</span>
+          </div>
+
+          <div class="vocab-review-grid">
+            <div class="review-column">
+              <div class="review-column-head">
+                <h3>测试历史记录</h3>
+                <span>按时间倒序</span>
+              </div>
+              <div class="test-history-list" id="test-history-list" aria-live="polite">
+                <p class="review-empty">暂无测试记录</p>
+              </div>
+            </div>
+
+            <div class="review-column">
+              <div class="review-column-head">
+                <h3>单词熟练度</h3>
+                <span>错误次数优先</span>
+              </div>
+              <div class="word-stats-list" id="word-stats-list" aria-live="polite">
+                <p class="review-empty">完成答题后，这里会显示需要重点复习的单词。</p>
+              </div>
+            </div>
           </div>
         </section>
       </div>

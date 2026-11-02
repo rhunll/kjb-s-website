@@ -17,6 +17,9 @@
       daily: {},
       total: 0,
       records: [],
+      words: [],
+      testHistory: [],
+      wordStats: {},
     },
     mocks: [],
     notes: [],
@@ -48,6 +51,32 @@
     vocabToday: document.querySelector("#vocab-today"),
     vocabTotal: document.querySelector("#vocab-total"),
     vocabRecentList: document.querySelector("#vocab-recent-list"),
+    wordCount: document.querySelector("#word-count"),
+    wordImportForm: document.querySelector("#word-import-form"),
+    wordImportInput: document.querySelector("#word-import-input"),
+    wordImportMode: document.querySelector("#word-import-mode"),
+    wordImportButton: document.querySelector("#word-import-button"),
+    wordImportMessage: document.querySelector("#word-import-message"),
+    wordLibraryList: document.querySelector("#word-library-list"),
+    testStart: document.querySelector("#test-start"),
+    testStop: document.querySelector("#test-stop"),
+    testAnswered: document.querySelector("#test-answered"),
+    testCorrect: document.querySelector("#test-correct"),
+    testWrong: document.querySelector("#test-wrong"),
+    testAccuracy: document.querySelector("#test-accuracy"),
+    testIdle: document.querySelector("#test-idle"),
+    testIdleTitle: document.querySelector("#test-idle-title"),
+    testIdleDescription: document.querySelector("#test-idle-description"),
+    testQuestion: document.querySelector("#test-question"),
+    testQuestionNumber: document.querySelector("#test-question-number"),
+    testQuestionType: document.querySelector("#test-question-type"),
+    testPrompt: document.querySelector("#test-prompt"),
+    spellingForm: document.querySelector("#spelling-form"),
+    spellingInput: document.querySelector("#spelling-input"),
+    testChoices: document.querySelector("#test-choices"),
+    testFeedback: document.querySelector("#test-feedback"),
+    testHistoryList: document.querySelector("#test-history-list"),
+    wordStatsList: document.querySelector("#word-stats-list"),
     mockForm: document.querySelector("#mock-form"),
     mockName: document.querySelector("#mock-name"),
     mockListening: document.querySelector("#mock-listening"),
@@ -65,6 +94,18 @@
     notesList: document.querySelector("#notes-list"),
     notesEmpty: document.querySelector("#notes-empty"),
     toastRegion: document.querySelector("#toast-region"),
+  };
+
+  let vocabTest = {
+    active: false,
+    remainingIds: [],
+    currentWord: null,
+    questionType: "",
+    answered: 0,
+    correct: 0,
+    wrong: 0,
+    locked: false,
+    timer: null,
   };
 
   function cloneDefaultState() {
@@ -114,6 +155,75 @@
           };
         })
         .filter(Boolean);
+      const wordMap = new Map();
+      (Array.isArray(loadedVocab.words) ? loadedVocab.words : []).forEach((word) => {
+        if (!word || typeof word !== "object") return;
+        const english = stringValue(word.english).trim().slice(0, 80);
+        const pos = stringValue(word.pos).trim().slice(0, 20);
+        const meaning = stringValue(word.meaning).trim().slice(0, 120);
+        const key = english.toLocaleLowerCase();
+        if (!key || !pos || !meaning || wordMap.has(key)) return;
+        wordMap.set(key, {
+          id: stringValue(word.id) || uid(),
+          english,
+          pos,
+          meaning,
+          createdAt: Number.isNaN(Date.parse(word.createdAt))
+            ? new Date().toISOString()
+            : new Date(word.createdAt).toISOString(),
+        });
+      });
+      const cleanWords = [...wordMap.values()];
+      const cleanTestHistory = (
+        Array.isArray(loadedVocab.testHistory) ? loadedVocab.testHistory : []
+      )
+        .map((record) => {
+          if (!record || typeof record !== "object") return null;
+          const total = Number(record.total);
+          const correct = Number(record.correct);
+          const wrong = Number(record.wrong);
+          if (
+            !Number.isInteger(total) ||
+            total < 0 ||
+            !Number.isInteger(correct) ||
+            correct < 0 ||
+            !Number.isInteger(wrong) ||
+            wrong < 0 ||
+            correct + wrong !== total
+          ) {
+            return null;
+          }
+          return {
+            id: stringValue(record.id) || uid(),
+            createdAt: Number.isNaN(Date.parse(record.createdAt))
+              ? new Date().toISOString()
+              : new Date(record.createdAt).toISOString(),
+            total,
+            correct,
+            wrong,
+            accuracy: total ? Math.round((correct / total) * 100) : 0,
+          };
+        })
+        .filter(Boolean);
+      const cleanWordStats = Object.entries(
+        loadedVocab.wordStats && typeof loadedVocab.wordStats === "object"
+          ? loadedVocab.wordStats
+          : {},
+      ).reduce((result, [key, value]) => {
+        const testCount = Number(value?.testCount);
+        const errorCount = Number(value?.errorCount);
+        if (
+          key &&
+          Number.isInteger(testCount) &&
+          testCount >= 0 &&
+          Number.isInteger(errorCount) &&
+          errorCount >= 0 &&
+          errorCount <= testCount
+        ) {
+          result[key] = { testCount, errorCount };
+        }
+        return result;
+      }, {});
 
       return {
         tasks: Array.isArray(saved.tasks) ? saved.tasks : fresh.tasks,
@@ -128,6 +238,9 @@
           daily: cleanDaily,
           total: Number.isInteger(savedTotal) && savedTotal >= derivedTotal ? savedTotal : derivedTotal,
           records: cleanRecords,
+          words: cleanWords,
+          testHistory: cleanTestHistory,
+          wordStats: cleanWordStats,
         },
         mocks: Array.isArray(saved.mocks) ? saved.mocks : fresh.mocks,
         notes: Array.isArray(saved.notes) ? saved.notes : fresh.notes,
@@ -465,6 +578,468 @@
     showToast(`已记录 ${pages} 页词汇背诵`);
   }
 
+  function normalizeWordKey(english) {
+    return english.trim().toLocaleLowerCase();
+  }
+
+  function setWordImportMessage(message, type = "") {
+    elements.wordImportMessage.textContent = message;
+    elements.wordImportMessage.dataset.type = type;
+  }
+
+  function renderWordLibrary() {
+    const words = [...state.vocab.words].sort((first, second) =>
+      first.english.localeCompare(second.english, "en", { sensitivity: "base" }),
+    );
+    elements.wordCount.textContent = String(words.length);
+    elements.wordLibraryList.replaceChildren();
+
+    if (words.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "word-library-empty";
+      empty.textContent = "暂无单词，先导入一份自己的词库。";
+      elements.wordLibraryList.append(empty);
+      return;
+    }
+
+    words.forEach((word) => {
+      const row = document.createElement("div");
+      row.className = "word-entry";
+
+      const wordInfo = document.createElement("div");
+      wordInfo.className = "word-entry-info";
+      const english = document.createElement("strong");
+      english.textContent = word.english;
+      const pos = document.createElement("span");
+      pos.className = "word-entry-pos";
+      pos.textContent = word.pos;
+      wordInfo.append(english, pos);
+
+      const meaning = document.createElement("span");
+      meaning.className = "word-entry-meaning";
+      meaning.textContent = word.meaning;
+
+      const deleteButton = document.createElement("button");
+      deleteButton.className = "word-entry-delete";
+      deleteButton.type = "button";
+      deleteButton.textContent = "×";
+      deleteButton.setAttribute("aria-label", `删除单词 ${word.english}`);
+      deleteButton.disabled = vocabTest.active;
+      deleteButton.addEventListener("click", () => deleteVocabWord(word.id));
+
+      row.append(wordInfo, meaning, deleteButton);
+      elements.wordLibraryList.append(row);
+    });
+  }
+
+  function importVocabulary(event) {
+    event.preventDefault();
+    if (vocabTest.active) {
+      showToast("请先结束当前测试");
+      return;
+    }
+
+    const lines = elements.wordImportInput.value
+      .split(/\r?\n/)
+      .map((line) => line.replace(/^\uFEFF/, "").trim())
+      .filter(Boolean);
+
+    if (lines.length === 0) {
+      setWordImportMessage("请至少粘贴一行词库内容。", "error");
+      elements.wordImportInput.focus();
+      return;
+    }
+
+    const parsedWords = [];
+    for (let index = 0; index < lines.length; index += 1) {
+      const parts = lines[index].split(",").map((part) => part.trim());
+      if (parts.length !== 3 || parts.some((part) => !part)) {
+        setWordImportMessage(
+          `第 ${index + 1} 行格式错误，请使用：英文,词性,中文`,
+          "error",
+        );
+        return;
+      }
+      parsedWords.push({
+        english: parts[0].slice(0, 80),
+        pos: parts[1].slice(0, 20),
+        meaning: parts[2].slice(0, 120),
+      });
+    }
+
+    const replaceMode = elements.wordImportMode.value === "replace";
+    const wordMap = new Map();
+    if (!replaceMode) {
+      state.vocab.words.forEach((word) => {
+        wordMap.set(normalizeWordKey(word.english), word);
+      });
+    }
+
+    const now = new Date().toISOString();
+    let addedCount = 0;
+    let updatedCount = 0;
+    parsedWords.forEach((word) => {
+      const key = normalizeWordKey(word.english);
+      const existing = wordMap.get(key);
+      if (existing) {
+        updatedCount += 1;
+        wordMap.set(key, { ...existing, pos: word.pos, meaning: word.meaning });
+      } else {
+        addedCount += 1;
+        wordMap.set(key, {
+          id: uid(),
+          english: word.english,
+          pos: word.pos,
+          meaning: word.meaning,
+          createdAt: now,
+        });
+      }
+    });
+
+    state.vocab.words = [...wordMap.values()];
+    if (replaceMode) {
+      const currentKeys = new Set(state.vocab.words.map((word) => normalizeWordKey(word.english)));
+      Object.keys(state.vocab.wordStats).forEach((key) => {
+        if (!currentKeys.has(key)) delete state.vocab.wordStats[key];
+      });
+    }
+
+    saveState();
+    renderWordLibrary();
+    renderWordStats();
+    elements.wordImportForm.reset();
+    setWordImportMessage(
+      `导入完成：新增 ${addedCount} 个，更新 ${updatedCount} 个，当前共 ${state.vocab.words.length} 个单词。`,
+      "success",
+    );
+    showToast("词库已保存到本地");
+  }
+
+  function deleteVocabWord(id) {
+    if (vocabTest.active) {
+      showToast("请先结束当前测试");
+      return;
+    }
+    const word = state.vocab.words.find((item) => item.id === id);
+    if (!word) return;
+    if (!window.confirm(`确定删除单词“${word.english}”吗？`)) return;
+
+    state.vocab.words = state.vocab.words.filter((item) => item.id !== id);
+    delete state.vocab.wordStats[normalizeWordKey(word.english)];
+    saveState();
+    renderWordLibrary();
+    renderWordStats();
+    showToast("单词已从词库删除");
+  }
+
+  function updateTestDashboard() {
+    const answered = vocabTest.correct + vocabTest.wrong;
+    const accuracy = answered ? Math.round((vocabTest.correct / answered) * 100) : 0;
+    elements.testAnswered.textContent = String(answered);
+    elements.testCorrect.textContent = String(vocabTest.correct);
+    elements.testWrong.textContent = String(vocabTest.wrong);
+    elements.testAccuracy.textContent = String(accuracy);
+  }
+
+  function syncTestControls() {
+    elements.testStart.disabled = vocabTest.active;
+    elements.testStop.disabled = !vocabTest.active;
+    elements.wordImportButton.disabled = vocabTest.active;
+    elements.wordImportInput.disabled = vocabTest.active;
+    elements.wordImportMode.disabled = vocabTest.active;
+    elements.wordLibraryList.querySelectorAll(".word-entry-delete").forEach((button) => {
+      button.disabled = vocabTest.active;
+    });
+  }
+
+  function showTestIdle(title, description) {
+    elements.testIdleTitle.textContent = title;
+    elements.testIdleDescription.textContent = description;
+    elements.testIdle.hidden = false;
+    elements.testQuestion.hidden = true;
+    elements.testQuestionType.textContent = "";
+    elements.testFeedback.textContent = "";
+    elements.testFeedback.className = "test-feedback";
+  }
+
+  function startVocabTest() {
+    if (vocabTest.active) return;
+    if (state.vocab.words.length < 4) {
+      showTestIdle(
+        "词库至少需要 4 个单词",
+        "英译中选择题需要 3 个干扰项，请先在词库管理中添加更多单词。",
+      );
+      showToast("请先导入至少 4 个单词");
+      return;
+    }
+
+    window.clearTimeout(vocabTest.timer);
+    vocabTest = {
+      active: true,
+      remainingIds: state.vocab.words.map((word) => word.id),
+      currentWord: null,
+      questionType: "",
+      answered: 0,
+      correct: 0,
+      wrong: 0,
+      locked: false,
+      timer: null,
+    };
+    elements.testIdle.hidden = true;
+    elements.testQuestion.hidden = false;
+    updateTestDashboard();
+    syncTestControls();
+    renderWordLibrary();
+    nextVocabQuestion();
+  }
+
+  function nextVocabQuestion() {
+    if (!vocabTest.active) return;
+    if (vocabTest.remainingIds.length === 0) {
+      finishVocabTest("complete");
+      return;
+    }
+
+    const randomIndex = Math.floor(Math.random() * vocabTest.remainingIds.length);
+    const [wordId] = vocabTest.remainingIds.splice(randomIndex, 1);
+    const word = state.vocab.words.find((item) => item.id === wordId);
+    if (!word) {
+      nextVocabQuestion();
+      return;
+    }
+
+    vocabTest.currentWord = word;
+    vocabTest.questionType = Math.random() < 0.5 ? "spelling" : "choice";
+    vocabTest.locked = false;
+    updateTestDashboard();
+    elements.testQuestionNumber.textContent = `QUESTION ${String(
+      vocabTest.correct + vocabTest.wrong + 1,
+    ).padStart(2, "0")}`;
+    elements.testFeedback.textContent = "";
+    elements.testFeedback.className = "test-feedback";
+
+    if (vocabTest.questionType === "spelling") {
+      renderSpellingQuestion(word);
+    } else {
+      renderChoiceQuestion(word);
+    }
+  }
+
+  function renderSpellingQuestion(word) {
+    elements.testQuestionType.textContent = "中译英 · 拼写";
+    elements.testPrompt.textContent = `${word.pos}  ${word.meaning}`;
+    elements.spellingForm.hidden = false;
+    elements.testChoices.hidden = true;
+    elements.spellingForm.reset();
+    elements.spellingInput.disabled = false;
+    elements.spellingForm.querySelector("button").disabled = false;
+    elements.spellingInput.focus();
+  }
+
+  function shuffle(items) {
+    const result = [...items];
+    for (let index = result.length - 1; index > 0; index -= 1) {
+      const randomIndex = Math.floor(Math.random() * (index + 1));
+      [result[index], result[randomIndex]] = [result[randomIndex], result[index]];
+    }
+    return result;
+  }
+
+  function renderChoiceQuestion(word) {
+    elements.testQuestionType.textContent = "英译中 · 选择";
+    elements.testPrompt.textContent = word.english;
+    elements.spellingForm.hidden = true;
+    elements.testChoices.hidden = false;
+    elements.testChoices.replaceChildren();
+
+    const distractors = shuffle(
+      state.vocab.words.filter((item) => item.id !== word.id),
+    ).slice(0, 3);
+    const choices = shuffle([word, ...distractors]);
+
+    choices.forEach((choice) => {
+      const button = document.createElement("button");
+      button.className = "test-choice";
+      button.type = "button";
+      button.dataset.wordId = choice.id;
+      button.textContent = `${choice.pos}  ${choice.meaning}`;
+      button.addEventListener("click", () => {
+        if (vocabTest.locked) return;
+        vocabTest.locked = true;
+        const isCorrect = choice.id === word.id;
+        elements.testChoices.querySelectorAll("button").forEach((option) => {
+          option.disabled = true;
+          if (option.dataset.wordId === word.id) option.classList.add("is-correct");
+        });
+        if (!isCorrect) button.classList.add("is-wrong");
+        resolveVocabAnswer(word, isCorrect);
+      });
+      elements.testChoices.append(button);
+    });
+  }
+
+  function submitSpellingAnswer(event) {
+    event.preventDefault();
+    if (!vocabTest.active || vocabTest.locked || !vocabTest.currentWord) return;
+    const answer = elements.spellingInput.value.trim();
+    if (!answer) return;
+
+    vocabTest.locked = true;
+    elements.spellingInput.disabled = true;
+    elements.spellingForm.querySelector("button").disabled = true;
+    const isCorrect =
+      answer.toLocaleLowerCase() === vocabTest.currentWord.english.toLocaleLowerCase();
+    resolveVocabAnswer(vocabTest.currentWord, isCorrect);
+  }
+
+  function resolveVocabAnswer(word, isCorrect) {
+    if (isCorrect) {
+      vocabTest.correct += 1;
+      elements.testFeedback.textContent = "回答正确";
+      elements.testFeedback.className = "test-feedback is-correct";
+    } else {
+      vocabTest.wrong += 1;
+      elements.testFeedback.textContent = `回答错误，正确答案是 ${word.english}`;
+      elements.testFeedback.className = "test-feedback is-wrong";
+    }
+
+    const key = normalizeWordKey(word.english);
+    const stats = state.vocab.wordStats[key] || { testCount: 0, errorCount: 0 };
+    stats.testCount += 1;
+    if (!isCorrect) stats.errorCount += 1;
+    state.vocab.wordStats[key] = stats;
+    saveState();
+    updateTestDashboard();
+    renderWordStats();
+
+    vocabTest.timer = window.setTimeout(() => {
+      vocabTest.timer = null;
+      nextVocabQuestion();
+    }, isCorrect ? 900 : 2000);
+  }
+
+  function finishVocabTest(reason = "manual") {
+    if (!vocabTest.active) return;
+    window.clearTimeout(vocabTest.timer);
+    vocabTest.timer = null;
+    vocabTest.active = false;
+    vocabTest.locked = true;
+
+    const total = vocabTest.correct + vocabTest.wrong;
+    state.vocab.testHistory.push({
+      id: uid(),
+      createdAt: new Date().toISOString(),
+      total,
+      correct: vocabTest.correct,
+      wrong: vocabTest.wrong,
+      accuracy: total ? Math.round((vocabTest.correct / total) * 100) : 0,
+    });
+    saveState();
+    renderTestHistory();
+    renderWordStats();
+    syncTestControls();
+    renderWordLibrary();
+    showTestIdle(
+      reason === "complete" ? "本次词库已全部抽完" : "本次测试已结束",
+      `共答 ${total} 题，正确 ${vocabTest.correct} 题，错误 ${vocabTest.wrong} 题。`,
+    );
+  }
+
+  function formatReviewDate(dateInput) {
+    const date = new Date(dateInput);
+    if (Number.isNaN(date.getTime())) return "--";
+    const day = formatVocabDate(localDateKey(date));
+    const time = new Intl.DateTimeFormat("zh-CN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(date);
+    return `${day} ${time}`;
+  }
+
+  function renderTestHistory() {
+    const history = [...state.vocab.testHistory].sort((first, second) =>
+      second.createdAt.localeCompare(first.createdAt),
+    );
+    elements.testHistoryList.replaceChildren();
+
+    if (history.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "review-empty";
+      empty.textContent = "暂无测试记录";
+      elements.testHistoryList.append(empty);
+      return;
+    }
+
+    history.forEach((record) => {
+      const row = document.createElement("div");
+      row.className = "test-history-row";
+
+      const date = document.createElement("span");
+      date.className = "review-date";
+      date.textContent = formatReviewDate(record.createdAt);
+
+      const summary = document.createElement("span");
+      summary.className = "review-summary";
+      summary.textContent = `${record.total} 题 · 对 ${record.correct} · 错 ${record.wrong}`;
+
+      const accuracy = document.createElement("strong");
+      accuracy.className = "review-accuracy";
+      accuracy.textContent = `${record.accuracy}%`;
+
+      row.append(date, summary, accuracy);
+      elements.testHistoryList.append(row);
+    });
+  }
+
+  function renderWordStats() {
+    const rows = state.vocab.words
+      .map((word) => ({
+        word,
+        stats: state.vocab.wordStats[normalizeWordKey(word.english)] || {
+          testCount: 0,
+          errorCount: 0,
+        },
+      }))
+      .filter((item) => item.stats.testCount > 0)
+      .sort(
+        (first, second) =>
+          second.stats.errorCount - first.stats.errorCount ||
+          second.stats.testCount - first.stats.testCount ||
+          first.word.english.localeCompare(second.word.english),
+      );
+
+    elements.wordStatsList.replaceChildren();
+
+    if (rows.length === 0) {
+      const empty = document.createElement("p");
+      empty.className = "review-empty";
+      empty.textContent = "完成答题后，这里会显示需要重点复习的单词。";
+      elements.wordStatsList.append(empty);
+      return;
+    }
+
+    rows.forEach(({ word, stats }) => {
+      const row = document.createElement("div");
+      row.className = "word-stats-row";
+
+      const wordInfo = document.createElement("div");
+      wordInfo.className = "word-stats-word";
+      const english = document.createElement("strong");
+      english.textContent = word.english;
+      const meaning = document.createElement("span");
+      meaning.textContent = `${word.pos} ${word.meaning}`;
+      wordInfo.append(english, meaning);
+
+      const counts = document.createElement("span");
+      counts.className = "word-stats-counts";
+      counts.textContent = `考察 ${stats.testCount} 次 · 错误 ${stats.errorCount} 次`;
+
+      row.append(wordInfo, counts);
+      elements.wordStatsList.append(row);
+    });
+  }
+
   const listeningBands = [
     [39, 9], [37, 8.5], [35, 8], [32, 7.5], [30, 7], [26, 6.5], [23, 6],
     [18, 5.5], [16, 5], [13, 4.5], [10, 4], [6, 3.5], [4, 3], [3, 2.5],
@@ -701,6 +1276,10 @@
   });
 
   elements.vocabForm.addEventListener("submit", addVocabRecord);
+  elements.wordImportForm.addEventListener("submit", importVocabulary);
+  elements.testStart.addEventListener("click", startVocabTest);
+  elements.testStop.addEventListener("click", () => finishVocabTest("manual"));
+  elements.spellingForm.addEventListener("submit", submitSpellingAnswer);
   elements.mockForm.addEventListener("submit", addMock);
   elements.mockListening.addEventListener("input", updateMockPreview);
   elements.mockReading.addEventListener("input", updateMockPreview);
@@ -714,6 +1293,11 @@
   renderTasks();
   renderScores();
   renderVocab();
+  renderWordLibrary();
+  renderTestHistory();
+  renderWordStats();
+  updateTestDashboard();
+  syncTestControls();
   renderMocks();
   renderNotes();
   updateMockPreview();
