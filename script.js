@@ -395,9 +395,41 @@
       secondDivider.className = "vocab-record-divider";
       secondDivider.textContent = "|";
 
-      row.append(date, firstDivider, pages, secondDivider, pageNumbers);
+      const deleteButton = document.createElement("button");
+      deleteButton.className = "vocab-record-delete";
+      deleteButton.type = "button";
+      deleteButton.textContent = "删除";
+      deleteButton.setAttribute(
+        "aria-label",
+        `删除 ${formatVocabDate(record.date)} 背诵 ${record.pages} 页的记录`,
+      );
+      deleteButton.addEventListener("click", () => deleteVocabRecord(record.id));
+
+      row.append(date, firstDivider, pages, secondDivider, pageNumbers, deleteButton);
       elements.vocabRecentList.append(row);
     });
+  }
+
+  function deleteVocabRecord(id) {
+    const record = state.vocab.records.find((item) => item.id === id);
+    if (!record) return;
+    if (!window.confirm("确定删除这条词汇背诵记录吗？")) return;
+
+    state.vocab.records = state.vocab.records.filter((item) => item.id !== id);
+    const remainingPages = (state.vocab.daily[record.date] || 0) - record.pages;
+    if (remainingPages > 0) {
+      state.vocab.daily[record.date] = remainingPages;
+    } else {
+      delete state.vocab.daily[record.date];
+    }
+    state.vocab.total = Object.values(state.vocab.daily).reduce(
+      (sum, pages) => sum + pages,
+      0,
+    );
+
+    saveState();
+    renderVocab();
+    showToast("词汇背诵记录已删除");
   }
 
   function addVocabRecord(event) {

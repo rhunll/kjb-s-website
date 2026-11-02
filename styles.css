@@ -1901,7 +1901,7 @@ textarea:focus-visible {
 
 .vocab-record {
   display: grid;
-  grid-template-columns: 76px 12px minmax(110px, 0.65fr) 12px minmax(0, 1fr);
+  grid-template-columns: 76px 12px minmax(110px, 0.65fr) 12px minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
   padding: 12px 3px;
@@ -1936,6 +1936,26 @@ textarea:focus-visible {
   color: #c5bbb1;
   font-size: 9px;
   text-align: center;
+}
+
+.vocab-record-delete {
+  justify-self: end;
+  padding: 4px 2px 4px 10px;
+  border: 0;
+  color: #938981;
+  background: transparent;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  opacity: 0.72;
+  transition: color 160ms ease, opacity 160ms ease;
+}
+
+.vocab-record-delete:hover,
+.vocab-record-delete:focus-visible {
+  color: var(--danger);
+  opacity: 1;
 }
 
 .vocab-footnote {
@@ -2007,7 +2027,7 @@ textarea:focus-visible {
   }
 
   .vocab-record {
-    grid-template-columns: 72px minmax(0, 1fr);
+    grid-template-columns: 72px minmax(0, 1fr) auto;
     gap: 4px 12px;
     padding-block: 11px;
   }
@@ -2018,8 +2038,25 @@ textarea:focus-visible {
 
   .vocab-record-pages-numbers {
     grid-column: 1 / -1;
+    grid-row: 2;
     padding-left: 84px;
     color: var(--text-muted);
+  }
+
+  .vocab-record-date {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .vocab-record-pages {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .vocab-record-delete {
+    grid-column: 3;
+    grid-row: 1;
+    padding-left: 8px;
   }
 }
 
