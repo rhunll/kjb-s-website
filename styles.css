@@ -3393,6 +3393,12 @@ textarea:focus-visible {
   gap: 8px;
 }
 
+.manage-library-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .manage-library-picker select,
 .test-library-picker select {
   max-width: 210px;
@@ -3403,6 +3409,33 @@ textarea:focus-visible {
   color: var(--text-secondary);
   background: #ffffff;
   font-size: 9px;
+}
+
+.word-library-delete-button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #8c4d46;
+  background: #f2f0ed;
+  font-size: 8px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.word-library-delete-button:hover,
+.word-library-delete-button:focus-visible {
+  border-color: rgba(140, 77, 70, 0.18);
+  color: #753c37;
+  background: #eee9e5;
+}
+
+.word-library-delete-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
 }
 
 .test-library-picker {
@@ -3503,6 +3536,26 @@ textarea:focus-visible {
   .manage-library-picker select,
   .test-library-picker select {
     max-width: min(210px, 58vw);
+  }
+
+  .word-library-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .manage-library-actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .manage-library-picker select {
+    width: 100%;
+    max-width: none;
+  }
+
+  .word-library-delete-button {
+    width: 100%;
   }
 
   .test-library-picker {

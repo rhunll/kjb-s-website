@@ -62,6 +62,7 @@
     wordLibraryList: document.querySelector("#word-library-list"),
     wordLibraryName: document.querySelector("#word-library-name"),
     wordManageSelect: document.querySelector("#word-manage-select"),
+    wordLibraryDelete: document.querySelector("#word-library-delete"),
     testLibrarySelect: document.querySelector("#test-library-select"),
     testStart: document.querySelector("#test-start"),
     testStop: document.querySelector("#test-stop"),
@@ -753,6 +754,7 @@
       select.value = currentValue;
       select.disabled = vocabTest.active;
     });
+    elements.wordLibraryDelete.disabled = options.length === 0;
   }
 
   function activateVocabTab(tabName, focusTab = false) {
@@ -958,6 +960,65 @@
     renderWordLibrary();
     renderWordStats();
     showToast("单词已从词库删除");
+  }
+
+  function deleteCurrentLibrary() {
+    const library = getManageLibrary();
+    if (!library) {
+      showToast("当前没有可删除的词库");
+      return;
+    }
+    if (!window.confirm(`确定要删除词库 [${library.name}] 吗？该操作不可逆！`)) return;
+
+    const deletingActiveLibrary =
+      vocabTest.active && vocabTest.libraryId === library.id;
+    if (deletingActiveLibrary) {
+      window.clearTimeout(vocabTest.timer);
+      vocabTest = {
+        active: false,
+        libraryId: "",
+        libraryName: "",
+        remainingIds: [],
+        currentWord: null,
+        questionType: "",
+        answered: 0,
+        correct: 0,
+        wrong: 0,
+        locked: false,
+        timer: null,
+      };
+    }
+
+    state.vocab.libraries = state.vocab.libraries.filter((item) => item.id !== library.id);
+    delete state.vocab.wordStats[library.id];
+    state.vocab.testHistory = state.vocab.testHistory.filter(
+      (record) => record.libraryId !== library.id && record.libraryName !== library.name,
+    );
+
+    if (state.vocab.manageLibraryId === library.id) state.vocab.manageLibraryId = "";
+    if (state.vocab.testLibraryId === library.id) state.vocab.testLibraryId = "";
+
+    saveState();
+    populateLibrarySelects();
+    renderWordLibrary();
+    renderWordStats();
+    renderTestHistory();
+    updateTestDashboard();
+    syncTestControls();
+
+    const remainingLibrary = getTestLibrary();
+    if (remainingLibrary) {
+      if (!vocabTest.active) {
+        showTestIdle(
+          `已选择「${remainingLibrary.name}」`,
+          `该词库共有 ${remainingLibrary.words.length} 个单词，点击“开始测试”随机抽题。`,
+        );
+      }
+      showToast(`词库“${library.name}”已删除`);
+    } else {
+      showTestIdle("暂无可用词库", "请回到“词库管理”重新命名并导入词库。");
+      showToast("全部词库已删除，请重新导入");
+    }
   }
 
   function updateTestDashboard() {
@@ -1553,6 +1614,7 @@
     saveState();
     renderWordLibrary();
   });
+  elements.wordLibraryDelete.addEventListener("click", deleteCurrentLibrary);
   elements.testLibrarySelect.addEventListener("change", () => {
     if (vocabTest.active) return;
     state.vocab.testLibraryId = elements.testLibrarySelect.value;

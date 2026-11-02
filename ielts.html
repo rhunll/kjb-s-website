@@ -405,10 +405,15 @@
             <div class="word-library-panel">
               <div class="word-library-head">
                 <span>词库列表</span>
-                <label class="manage-library-picker">
-                  <span class="sr-only">选择要查看的词库</span>
-                  <select id="word-manage-select" aria-label="选择要查看的词库"></select>
-                </label>
+                <div class="manage-library-actions">
+                  <label class="manage-library-picker">
+                    <span class="sr-only">选择要查看的词库</span>
+                    <select id="word-manage-select" aria-label="选择要查看的词库"></select>
+                  </label>
+                  <button class="word-library-delete-button" id="word-library-delete" type="button">
+                    删除当前词库
+                  </button>
+                </div>
               </div>
               <div class="word-library-list" id="word-library-list" aria-live="polite">
                 <p class="word-library-empty">暂无单词，先导入一份自己的词库。</p>
