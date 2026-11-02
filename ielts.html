@@ -78,6 +78,47 @@
         </aside>
       </section>
 
+      <nav class="vocab-tabs" role="tablist" aria-label="词汇学习工具">
+        <span class="vocab-tabs-label">VOCABULARY WORKSPACE</span>
+        <div class="vocab-tab-buttons">
+          <button
+            class="vocab-tab is-active"
+            id="vocab-tab-library"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="vocab-panel-library"
+            data-vocab-tab="library"
+          >
+            词库管理
+          </button>
+          <button
+            class="vocab-tab"
+            id="vocab-tab-test"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="vocab-panel-test"
+            data-vocab-tab="test"
+            tabindex="-1"
+          >
+            单词自测
+          </button>
+          <button
+            class="vocab-tab"
+            id="vocab-tab-history"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="vocab-panel-history"
+            data-vocab-tab="history"
+            tabindex="-1"
+          >
+            测试历史
+          </button>
+        </div>
+      </nav>
+
       <div class="dashboard-grid">
         <section class="panel panel-tasks reveal" aria-labelledby="tasks-title">
           <div class="panel-heading">
@@ -246,6 +287,13 @@
           </div>
         </section>
 
+        <div
+          class="vocab-tab-panel"
+          id="vocab-panel-library"
+          role="tabpanel"
+          aria-labelledby="vocab-tab-library"
+          data-vocab-panel="library"
+        >
         <section class="panel panel-vocab reveal" aria-labelledby="vocab-title">
           <div class="vocab-heading">
             <div>
@@ -326,13 +374,21 @@
 
           <div class="word-library-layout">
             <form class="word-import-form" id="word-import-form">
+              <label for="word-library-name">词库名称</label>
+              <input
+                class="word-library-name"
+                id="word-library-name"
+                type="text"
+                maxlength="40"
+                placeholder="例如：雅思核心词"
+              />
               <label for="word-import-input">批量导入单词</label>
-              <p class="word-format-hint">每行一个单词，严格使用：英文,词性,中文</p>
+              <p class="word-format-hint">每行一个单词，严格使用：英文/同义词,词性,中文</p>
               <textarea
                 id="word-import-input"
                 rows="7"
                 spellcheck="false"
-                placeholder="abandon,v.,放弃&#10;benefit,n.,益处&#10;delicate,adj.,精美的"
+                placeholder="abandon/desert,v.,放弃&#10;benefit,n.,益处&#10;delicate,adj.,精美的"
               ></textarea>
               <div class="word-import-actions">
                 <select id="word-import-mode" aria-label="导入方式">
@@ -349,7 +405,10 @@
             <div class="word-library-panel">
               <div class="word-library-head">
                 <span>词库列表</span>
-                <span>按字母排序</span>
+                <label class="manage-library-picker">
+                  <span class="sr-only">选择要查看的词库</span>
+                  <select id="word-manage-select" aria-label="选择要查看的词库"></select>
+                </label>
               </div>
               <div class="word-library-list" id="word-library-list" aria-live="polite">
                 <p class="word-library-empty">暂无单词，先导入一份自己的词库。</p>
@@ -357,12 +416,25 @@
             </div>
           </div>
         </section>
+        </div>
 
+        <div
+          class="vocab-tab-panel"
+          id="vocab-panel-test"
+          role="tabpanel"
+          aria-labelledby="vocab-tab-test"
+          data-vocab-panel="test"
+          hidden
+        >
         <section class="panel panel-word-test reveal" aria-labelledby="word-test-title">
           <div class="test-heading">
             <div>
               <span class="section-index">03B / TEST</span>
               <h2 id="word-test-title">单词自测</h2>
+              <label class="test-library-picker" for="test-library-select">
+                <span>本次测试词库</span>
+                <select id="test-library-select"></select>
+              </label>
             </div>
             <div class="test-actions">
               <button class="button button-primary" id="test-start" type="button">开始测试</button>
@@ -423,6 +495,48 @@
             </div>
           </div>
         </section>
+        </div>
+
+        <div
+          class="vocab-tab-panel"
+          id="vocab-panel-history"
+          role="tabpanel"
+          aria-labelledby="vocab-tab-history"
+          data-vocab-panel="history"
+          hidden
+        >
+          <section class="panel panel-vocab-review reveal" aria-labelledby="vocab-review-title">
+            <div class="panel-heading">
+              <div>
+                <span class="section-index">TEST HISTORY</span>
+                <h2 id="vocab-review-title">测试历史与熟练度</h2>
+              </div>
+              <span class="panel-hint">记录每一次练习</span>
+            </div>
+
+            <div class="vocab-review-grid">
+              <div class="review-column">
+                <div class="review-column-head">
+                  <h3>测试历史记录</h3>
+                  <span>按时间倒序</span>
+                </div>
+                <div class="test-history-list" id="test-history-list" aria-live="polite">
+                  <p class="review-empty">暂无测试记录</p>
+                </div>
+              </div>
+
+              <div class="review-column">
+                <div class="review-column-head">
+                  <h3>单词熟练度</h3>
+                  <span>错误次数优先</span>
+                </div>
+                <div class="word-stats-list" id="word-stats-list" aria-live="polite">
+                  <p class="review-empty">完成答题后，这里会显示需要重点复习的单词。</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
 
         <section class="panel panel-mocks reveal" aria-labelledby="mocks-title">
           <div class="panel-heading mock-heading">
@@ -527,37 +641,6 @@
           </div>
         </section>
 
-        <section class="panel panel-vocab-review reveal" aria-labelledby="vocab-review-title">
-          <div class="panel-heading">
-            <div>
-              <span class="section-index">06 / REVIEW</span>
-              <h2 id="vocab-review-title">测试历史与熟练度</h2>
-            </div>
-            <span class="panel-hint">记录每一次练习</span>
-          </div>
-
-          <div class="vocab-review-grid">
-            <div class="review-column">
-              <div class="review-column-head">
-                <h3>测试历史记录</h3>
-                <span>按时间倒序</span>
-              </div>
-              <div class="test-history-list" id="test-history-list" aria-live="polite">
-                <p class="review-empty">暂无测试记录</p>
-              </div>
-            </div>
-
-            <div class="review-column">
-              <div class="review-column-head">
-                <h3>单词熟练度</h3>
-                <span>错误次数优先</span>
-              </div>
-              <div class="word-stats-list" id="word-stats-list" aria-live="polite">
-                <p class="review-empty">完成答题后，这里会显示需要重点复习的单词。</p>
-              </div>
-            </div>
-          </div>
-        </section>
       </div>
     </main>
 

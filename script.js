@@ -17,9 +17,11 @@
       daily: {},
       total: 0,
       records: [],
-      words: [],
+      libraries: [],
       testHistory: [],
       wordStats: {},
+      manageLibraryId: "",
+      testLibraryId: "",
     },
     mocks: [],
     notes: [],
@@ -58,6 +60,9 @@
     wordImportButton: document.querySelector("#word-import-button"),
     wordImportMessage: document.querySelector("#word-import-message"),
     wordLibraryList: document.querySelector("#word-library-list"),
+    wordLibraryName: document.querySelector("#word-library-name"),
+    wordManageSelect: document.querySelector("#word-manage-select"),
+    testLibrarySelect: document.querySelector("#test-library-select"),
     testStart: document.querySelector("#test-start"),
     testStop: document.querySelector("#test-stop"),
     testAnswered: document.querySelector("#test-answered"),
@@ -96,8 +101,13 @@
     toastRegion: document.querySelector("#toast-region"),
   };
 
+  const vocabTabButtons = [...document.querySelectorAll("[data-vocab-tab]")];
+  const vocabTabPanels = [...document.querySelectorAll("[data-vocab-panel]")];
+
   let vocabTest = {
     active: false,
+    libraryId: "",
+    libraryName: "",
     remainingIds: [],
     currentWord: null,
     questionType: "",
@@ -155,25 +165,9 @@
           };
         })
         .filter(Boolean);
-      const wordMap = new Map();
-      (Array.isArray(loadedVocab.words) ? loadedVocab.words : []).forEach((word) => {
-        if (!word || typeof word !== "object") return;
-        const english = stringValue(word.english).trim().slice(0, 80);
-        const pos = stringValue(word.pos).trim().slice(0, 20);
-        const meaning = stringValue(word.meaning).trim().slice(0, 120);
-        const key = english.toLocaleLowerCase();
-        if (!key || !pos || !meaning || wordMap.has(key)) return;
-        wordMap.set(key, {
-          id: stringValue(word.id) || uid(),
-          english,
-          pos,
-          meaning,
-          createdAt: Number.isNaN(Date.parse(word.createdAt))
-            ? new Date().toISOString()
-            : new Date(word.createdAt).toISOString(),
-        });
-      });
-      const cleanWords = [...wordMap.values()];
+      const hadLibraries = Array.isArray(loadedVocab.libraries);
+      const cleanLibraries = sanitizeLibraries(loadedVocab);
+      const fallbackLibraryId = cleanLibraries[0]?.id || "";
       const cleanTestHistory = (
         Array.isArray(loadedVocab.testHistory) ? loadedVocab.testHistory : []
       )
@@ -193,8 +187,15 @@
           ) {
             return null;
           }
+          const storedLibraryId = stringValue(record.libraryId);
+          const library = cleanLibraries.find(
+            (item) => item.id === storedLibraryId || item.name === record.libraryName,
+          );
           return {
             id: stringValue(record.id) || uid(),
+            libraryId: library?.id || storedLibraryId || fallbackLibraryId,
+            libraryName:
+              stringValue(record.libraryName).trim() || library?.name || "默认词库",
             createdAt: Number.isNaN(Date.parse(record.createdAt))
               ? new Date().toISOString()
               : new Date(record.createdAt).toISOString(),
@@ -205,25 +206,13 @@
           };
         })
         .filter(Boolean);
-      const cleanWordStats = Object.entries(
-        loadedVocab.wordStats && typeof loadedVocab.wordStats === "object"
-          ? loadedVocab.wordStats
-          : {},
-      ).reduce((result, [key, value]) => {
-        const testCount = Number(value?.testCount);
-        const errorCount = Number(value?.errorCount);
-        if (
-          key &&
-          Number.isInteger(testCount) &&
-          testCount >= 0 &&
-          Number.isInteger(errorCount) &&
-          errorCount >= 0 &&
-          errorCount <= testCount
-        ) {
-          result[key] = { testCount, errorCount };
-        }
-        return result;
-      }, {});
+      const cleanWordStats = sanitizeWordStats(
+        loadedVocab.wordStats,
+        hadLibraries ? "" : fallbackLibraryId,
+      );
+      const libraryIds = new Set(cleanLibraries.map((library) => library.id));
+      const requestedManageId = stringValue(loadedVocab.manageLibraryId);
+      const requestedTestId = stringValue(loadedVocab.testLibraryId);
 
       return {
         tasks: Array.isArray(saved.tasks) ? saved.tasks : fresh.tasks,
@@ -238,9 +227,13 @@
           daily: cleanDaily,
           total: Number.isInteger(savedTotal) && savedTotal >= derivedTotal ? savedTotal : derivedTotal,
           records: cleanRecords,
-          words: cleanWords,
+          libraries: cleanLibraries,
           testHistory: cleanTestHistory,
           wordStats: cleanWordStats,
+          manageLibraryId: libraryIds.has(requestedManageId)
+            ? requestedManageId
+            : fallbackLibraryId,
+          testLibraryId: libraryIds.has(requestedTestId) ? requestedTestId : fallbackLibraryId,
         },
         mocks: Array.isArray(saved.mocks) ? saved.mocks : fresh.mocks,
         notes: Array.isArray(saved.notes) ? saved.notes : fresh.notes,
@@ -249,6 +242,126 @@
     } catch {
       return cloneDefaultState();
     }
+  }
+
+  function parseWordAliases(value) {
+    const parts = stringValue(value)
+      .split("/")
+      .map((part) => part.trim())
+      .filter(Boolean);
+    return {
+      english: parts[0] || "",
+      synonyms: [...new Set(parts.slice(1))],
+    };
+  }
+
+  function sanitizeWord(word) {
+    if (!word || typeof word !== "object") return null;
+    const aliasSource =
+      word.englishAliases ??
+      (Array.isArray(word.synonyms) && word.synonyms.length
+        ? [word.english, ...word.synonyms].join("/")
+        : word.english);
+    const { english, synonyms } = parseWordAliases(aliasSource);
+    const pos = stringValue(word.pos).trim().slice(0, 20);
+    const meaning = stringValue(word.meaning).trim().slice(0, 120);
+    if (!english || !pos || !meaning) return null;
+    return {
+      id: stringValue(word.id) || uid(),
+      english: english.slice(0, 80),
+      synonyms: synonyms.map((item) => item.slice(0, 80)),
+      pos,
+      meaning,
+      createdAt: Number.isNaN(Date.parse(word.createdAt))
+        ? new Date().toISOString()
+        : new Date(word.createdAt).toISOString(),
+    };
+  }
+
+  function sanitizeLibraryWords(rawWords) {
+    const wordMap = new Map();
+    (Array.isArray(rawWords) ? rawWords : []).forEach((rawWord) => {
+      const word = sanitizeWord(rawWord);
+      if (!word) return;
+      wordMap.set(normalizeWordKey(word.english), word);
+    });
+    return [...wordMap.values()];
+  }
+
+  function sanitizeLibraries(loadedVocab) {
+    let rawLibraries = Array.isArray(loadedVocab.libraries) ? loadedVocab.libraries : [];
+    if (rawLibraries.length === 0 && Array.isArray(loadedVocab.words) && loadedVocab.words.length) {
+      rawLibraries = [
+        {
+          id: uid(),
+          name: "默认词库",
+          createdAt: new Date().toISOString(),
+          words: loadedVocab.words,
+        },
+      ];
+    }
+
+    const libraryMap = new Map();
+    rawLibraries.forEach((library) => {
+      if (!library || typeof library !== "object") return;
+      const name = stringValue(library.name).trim().slice(0, 40);
+      if (!name) return;
+      const key = name.toLocaleLowerCase();
+      const words = sanitizeLibraryWords(library.words);
+      const existing = libraryMap.get(key);
+      if (existing) {
+        existing.words = sanitizeLibraryWords([...existing.words, ...words]);
+      } else {
+        libraryMap.set(key, {
+          id: stringValue(library.id) || uid(),
+          name,
+          createdAt: Number.isNaN(Date.parse(library.createdAt))
+            ? new Date().toISOString()
+            : new Date(library.createdAt).toISOString(),
+          words,
+        });
+      }
+    });
+    return [...libraryMap.values()];
+  }
+
+  function sanitizeStatsBucket(rawStats) {
+    return Object.entries(rawStats && typeof rawStats === "object" ? rawStats : {}).reduce(
+      (result, [key, value]) => {
+        const testCount = Number(value?.testCount);
+        const errorCount = Number(value?.errorCount);
+        if (
+          key &&
+          Number.isInteger(testCount) &&
+          testCount >= 0 &&
+          Number.isInteger(errorCount) &&
+          errorCount >= 0 &&
+          errorCount <= testCount
+        ) {
+          result[key] = { testCount, errorCount };
+        }
+        return result;
+      },
+      {},
+    );
+  }
+
+  function sanitizeWordStats(rawStats, legacyLibraryId) {
+    if (!rawStats || typeof rawStats !== "object") return {};
+    const values = Object.values(rawStats);
+    const isLegacy = values.some(
+      (value) => value && typeof value === "object" && "testCount" in value,
+    );
+    if (isLegacy) {
+      const bucket = sanitizeStatsBucket(rawStats);
+      return legacyLibraryId ? { [legacyLibraryId]: bucket } : {};
+    }
+    return Object.entries(rawStats).reduce((result, [libraryId, bucket]) => {
+      if (!libraryId || !bucket || typeof bucket !== "object") return result;
+      const cleanBucket = sanitizeStatsBucket(bucket);
+      if (Object.keys(cleanBucket).length) result[libraryId] = cleanBucket;
+      return result;
+    }, {});
   }
 
   function stringValue(value) {
@@ -587,17 +700,92 @@
     elements.wordImportMessage.dataset.type = type;
   }
 
+  function getLibraryById(id) {
+    return state.vocab.libraries.find((library) => library.id === id) || null;
+  }
+
+  function getManageLibrary() {
+    return getLibraryById(state.vocab.manageLibraryId) || state.vocab.libraries[0] || null;
+  }
+
+  function getTestLibrary() {
+    return getLibraryById(state.vocab.testLibraryId) || state.vocab.libraries[0] || null;
+  }
+
+  function getLibraryStats(libraryId) {
+    return (state.vocab.wordStats[libraryId] ||= {});
+  }
+
+  function ensureLibrarySelections() {
+    const ids = new Set(state.vocab.libraries.map((library) => library.id));
+    const fallbackId = state.vocab.libraries[0]?.id || "";
+    if (!ids.has(state.vocab.manageLibraryId)) state.vocab.manageLibraryId = fallbackId;
+    if (!ids.has(state.vocab.testLibraryId)) state.vocab.testLibraryId = fallbackId;
+  }
+
+  function populateLibrarySelects() {
+    ensureLibrarySelections();
+    const options = state.vocab.libraries.map((library) => ({
+      value: library.id,
+      label: `${library.name} · ${library.words.length} 词`,
+    }));
+
+    [elements.wordManageSelect, elements.testLibrarySelect].forEach((select) => {
+      const currentValue =
+        select === elements.wordManageSelect
+          ? state.vocab.manageLibraryId
+          : state.vocab.testLibraryId;
+      select.replaceChildren();
+      if (options.length === 0) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "暂无词库";
+        select.append(option);
+        select.disabled = true;
+        return;
+      }
+      options.forEach((item) => {
+        const option = document.createElement("option");
+        option.value = item.value;
+        option.textContent = item.label;
+        select.append(option);
+      });
+      select.value = currentValue;
+      select.disabled = vocabTest.active;
+    });
+  }
+
+  function activateVocabTab(tabName, focusTab = false) {
+    vocabTabButtons.forEach((button) => {
+      const active = button.dataset.vocabTab === tabName;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-selected", String(active));
+      button.tabIndex = active ? 0 : -1;
+      if (active && focusTab) button.focus();
+    });
+    vocabTabPanels.forEach((panel) => {
+      const active = panel.dataset.vocabPanel === tabName;
+      panel.hidden = !active;
+      panel.classList.toggle("is-active", active);
+    });
+  }
+
   function renderWordLibrary() {
-    const words = [...state.vocab.words].sort((first, second) =>
+    const library = getManageLibrary();
+    const words = library
+      ? [...library.words].sort((first, second) =>
       first.english.localeCompare(second.english, "en", { sensitivity: "base" }),
-    );
+        )
+      : [];
     elements.wordCount.textContent = String(words.length);
     elements.wordLibraryList.replaceChildren();
 
     if (words.length === 0) {
       const empty = document.createElement("p");
       empty.className = "word-library-empty";
-      empty.textContent = "暂无单词，先导入一份自己的词库。";
+      empty.textContent = library
+        ? "这个词库还没有单词，可以继续导入。"
+        : "暂无词库，请先命名并导入一份词库。";
       elements.wordLibraryList.append(empty);
       return;
     }
@@ -609,7 +797,7 @@
       const wordInfo = document.createElement("div");
       wordInfo.className = "word-entry-info";
       const english = document.createElement("strong");
-      english.textContent = word.english;
+      english.textContent = [word.english, ...word.synonyms].join(" / ");
       const pos = document.createElement("span");
       pos.className = "word-entry-pos";
       pos.textContent = word.pos;
@@ -625,7 +813,7 @@
       deleteButton.textContent = "×";
       deleteButton.setAttribute("aria-label", `删除单词 ${word.english}`);
       deleteButton.disabled = vocabTest.active;
-      deleteButton.addEventListener("click", () => deleteVocabWord(word.id));
+      deleteButton.addEventListener("click", () => deleteVocabWord(library.id, word.id));
 
       row.append(wordInfo, meaning, deleteButton);
       elements.wordLibraryList.append(row);
@@ -636,6 +824,13 @@
     event.preventDefault();
     if (vocabTest.active) {
       showToast("请先结束当前测试");
+      return;
+    }
+
+    const libraryName = elements.wordLibraryName.value.trim();
+    if (!libraryName) {
+      setWordImportMessage("请先为词库命名。", "error");
+      elements.wordLibraryName.focus();
       return;
     }
 
@@ -655,22 +850,41 @@
       const parts = lines[index].split(",").map((part) => part.trim());
       if (parts.length !== 3 || parts.some((part) => !part)) {
         setWordImportMessage(
-          `第 ${index + 1} 行格式错误，请使用：英文,词性,中文`,
+          `第 ${index + 1} 行格式错误，请使用：英文/同义词,词性,中文`,
           "error",
         );
         return;
       }
+      const aliases = parseWordAliases(parts[0]);
+      if (!aliases.english) {
+        setWordImportMessage(`第 ${index + 1} 行缺少英文主词。`, "error");
+        return;
+      }
       parsedWords.push({
-        english: parts[0].slice(0, 80),
+        english: aliases.english.slice(0, 80),
+        synonyms: aliases.synonyms.map((item) => item.slice(0, 80)),
         pos: parts[1].slice(0, 20),
         meaning: parts[2].slice(0, 120),
       });
     }
 
     const replaceMode = elements.wordImportMode.value === "replace";
+    let library = state.vocab.libraries.find(
+      (item) => item.name.toLocaleLowerCase() === libraryName.toLocaleLowerCase(),
+    );
+    if (!library) {
+      library = {
+        id: uid(),
+        name: libraryName.slice(0, 40),
+        createdAt: new Date().toISOString(),
+        words: [],
+      };
+      state.vocab.libraries.push(library);
+    }
+
     const wordMap = new Map();
     if (!replaceMode) {
-      state.vocab.words.forEach((word) => {
+      library.words.forEach((word) => {
         wordMap.set(normalizeWordKey(word.english), word);
       });
     }
@@ -683,12 +897,19 @@
       const existing = wordMap.get(key);
       if (existing) {
         updatedCount += 1;
-        wordMap.set(key, { ...existing, pos: word.pos, meaning: word.meaning });
+        wordMap.set(key, {
+          ...existing,
+          english: word.english,
+          synonyms: word.synonyms,
+          pos: word.pos,
+          meaning: word.meaning,
+        });
       } else {
         addedCount += 1;
         wordMap.set(key, {
           id: uid(),
           english: word.english,
+          synonyms: word.synonyms,
           pos: word.pos,
           meaning: word.meaning,
           createdAt: now,
@@ -696,37 +917,44 @@
       }
     });
 
-    state.vocab.words = [...wordMap.values()];
+    library.words = [...wordMap.values()];
     if (replaceMode) {
-      const currentKeys = new Set(state.vocab.words.map((word) => normalizeWordKey(word.english)));
-      Object.keys(state.vocab.wordStats).forEach((key) => {
-        if (!currentKeys.has(key)) delete state.vocab.wordStats[key];
+      const currentKeys = new Set(library.words.map((word) => normalizeWordKey(word.english)));
+      const libraryStats = getLibraryStats(library.id);
+      Object.keys(libraryStats).forEach((key) => {
+        if (!currentKeys.has(key)) delete libraryStats[key];
       });
     }
 
+    state.vocab.manageLibraryId = library.id;
+    state.vocab.testLibraryId = library.id;
     saveState();
+    populateLibrarySelects();
     renderWordLibrary();
     renderWordStats();
     elements.wordImportForm.reset();
     setWordImportMessage(
-      `导入完成：新增 ${addedCount} 个，更新 ${updatedCount} 个，当前共 ${state.vocab.words.length} 个单词。`,
+      `“${library.name}”导入完成：新增 ${addedCount} 个，更新 ${updatedCount} 个，当前共 ${library.words.length} 个单词。`,
       "success",
     );
-    showToast("词库已保存到本地");
+    showToast(`词库“${library.name}”已保存`);
   }
 
-  function deleteVocabWord(id) {
+  function deleteVocabWord(libraryId, id) {
     if (vocabTest.active) {
       showToast("请先结束当前测试");
       return;
     }
-    const word = state.vocab.words.find((item) => item.id === id);
+    const library = getLibraryById(libraryId);
+    const word = library?.words.find((item) => item.id === id);
     if (!word) return;
     if (!window.confirm(`确定删除单词“${word.english}”吗？`)) return;
 
-    state.vocab.words = state.vocab.words.filter((item) => item.id !== id);
-    delete state.vocab.wordStats[normalizeWordKey(word.english)];
+    library.words = library.words.filter((item) => item.id !== id);
+    const libraryStats = getLibraryStats(library.id);
+    delete libraryStats[normalizeWordKey(word.english)];
     saveState();
+    populateLibrarySelects();
     renderWordLibrary();
     renderWordStats();
     showToast("单词已从词库删除");
@@ -744,9 +972,12 @@
   function syncTestControls() {
     elements.testStart.disabled = vocabTest.active;
     elements.testStop.disabled = !vocabTest.active;
+    elements.wordLibraryName.disabled = vocabTest.active;
     elements.wordImportButton.disabled = vocabTest.active;
     elements.wordImportInput.disabled = vocabTest.active;
     elements.wordImportMode.disabled = vocabTest.active;
+    elements.wordManageSelect.disabled = vocabTest.active || state.vocab.libraries.length === 0;
+    elements.testLibrarySelect.disabled = vocabTest.active || state.vocab.libraries.length === 0;
     elements.wordLibraryList.querySelectorAll(".word-entry-delete").forEach((button) => {
       button.disabled = vocabTest.active;
     });
@@ -764,10 +995,16 @@
 
   function startVocabTest() {
     if (vocabTest.active) return;
-    if (state.vocab.words.length < 4) {
+    const library = getTestLibrary();
+    if (!library) {
+      showTestIdle("还没有可用词库", "请先在“词库管理”中创建并导入词库。");
+      showToast("请先创建词库");
+      return;
+    }
+    if (library.words.length < 4) {
       showTestIdle(
         "词库至少需要 4 个单词",
-        "英译中选择题需要 3 个干扰项，请先在词库管理中添加更多单词。",
+        `“${library.name}”目前只有 ${library.words.length} 个单词，英译中选择题需要 3 个干扰项。`,
       );
       showToast("请先导入至少 4 个单词");
       return;
@@ -776,7 +1013,9 @@
     window.clearTimeout(vocabTest.timer);
     vocabTest = {
       active: true,
-      remainingIds: state.vocab.words.map((word) => word.id),
+      libraryId: library.id,
+      libraryName: library.name,
+      remainingIds: library.words.map((word) => word.id),
       currentWord: null,
       questionType: "",
       answered: 0,
@@ -802,7 +1041,7 @@
 
     const randomIndex = Math.floor(Math.random() * vocabTest.remainingIds.length);
     const [wordId] = vocabTest.remainingIds.splice(randomIndex, 1);
-    const word = state.vocab.words.find((item) => item.id === wordId);
+    const word = getLibraryById(vocabTest.libraryId)?.words.find((item) => item.id === wordId);
     if (!word) {
       nextVocabQuestion();
       return;
@@ -852,9 +1091,8 @@
     elements.testChoices.hidden = false;
     elements.testChoices.replaceChildren();
 
-    const distractors = shuffle(
-      state.vocab.words.filter((item) => item.id !== word.id),
-    ).slice(0, 3);
+    const libraryWords = getLibraryById(vocabTest.libraryId)?.words || [];
+    const distractors = shuffle(libraryWords.filter((item) => item.id !== word.id)).slice(0, 3);
     const choices = shuffle([word, ...distractors]);
 
     choices.forEach((choice) => {
@@ -887,8 +1125,11 @@
     vocabTest.locked = true;
     elements.spellingInput.disabled = true;
     elements.spellingForm.querySelector("button").disabled = true;
-    const isCorrect =
-      answer.toLocaleLowerCase() === vocabTest.currentWord.english.toLocaleLowerCase();
+    const acceptedAnswers = [
+      vocabTest.currentWord.english,
+      ...(vocabTest.currentWord.synonyms || []),
+    ].map((item) => item.toLocaleLowerCase());
+    const isCorrect = acceptedAnswers.includes(answer.toLocaleLowerCase());
     resolveVocabAnswer(vocabTest.currentWord, isCorrect);
   }
 
@@ -904,10 +1145,11 @@
     }
 
     const key = normalizeWordKey(word.english);
-    const stats = state.vocab.wordStats[key] || { testCount: 0, errorCount: 0 };
+    const libraryStats = getLibraryStats(vocabTest.libraryId);
+    const stats = libraryStats[key] || { testCount: 0, errorCount: 0 };
     stats.testCount += 1;
     if (!isCorrect) stats.errorCount += 1;
-    state.vocab.wordStats[key] = stats;
+    libraryStats[key] = stats;
     saveState();
     updateTestDashboard();
     renderWordStats();
@@ -915,7 +1157,7 @@
     vocabTest.timer = window.setTimeout(() => {
       vocabTest.timer = null;
       nextVocabQuestion();
-    }, isCorrect ? 900 : 2000);
+    }, 2000);
   }
 
   function finishVocabTest(reason = "manual") {
@@ -929,6 +1171,8 @@
     state.vocab.testHistory.push({
       id: uid(),
       createdAt: new Date().toISOString(),
+      libraryId: vocabTest.libraryId,
+      libraryName: vocabTest.libraryName,
       total,
       correct: vocabTest.correct,
       wrong: vocabTest.wrong,
@@ -937,6 +1181,7 @@
     saveState();
     renderTestHistory();
     renderWordStats();
+    populateLibrarySelects();
     syncTestControls();
     renderWordLibrary();
     showTestIdle(
@@ -979,6 +1224,10 @@
       date.className = "review-date";
       date.textContent = formatReviewDate(record.createdAt);
 
+      const library = document.createElement("span");
+      library.className = "review-library";
+      library.textContent = record.libraryName || "默认词库";
+
       const summary = document.createElement("span");
       summary.className = "review-summary";
       summary.textContent = `${record.total} 题 · 对 ${record.correct} · 错 ${record.wrong}`;
@@ -987,16 +1236,35 @@
       accuracy.className = "review-accuracy";
       accuracy.textContent = `${record.accuracy}%`;
 
-      row.append(date, summary, accuracy);
+      const deleteButton = document.createElement("button");
+      deleteButton.className = "history-delete";
+      deleteButton.type = "button";
+      deleteButton.textContent = "删除";
+      deleteButton.setAttribute("aria-label", `删除 ${record.libraryName} 的测试记录`);
+      deleteButton.addEventListener("click", () => deleteTestHistory(record.id));
+
+      row.append(date, library, summary, accuracy, deleteButton);
       elements.testHistoryList.append(row);
     });
   }
 
+  function deleteTestHistory(id) {
+    const record = state.vocab.testHistory.find((item) => item.id === id);
+    if (!record) return;
+    if (!window.confirm("确定删除这条测试历史记录吗？")) return;
+    state.vocab.testHistory = state.vocab.testHistory.filter((item) => item.id !== id);
+    saveState();
+    renderTestHistory();
+    showToast("测试历史记录已删除");
+  }
+
   function renderWordStats() {
-    const rows = state.vocab.words
+    const library = getTestLibrary();
+    const libraryStats = library ? getLibraryStats(library.id) : {};
+    const rows = (library?.words || [])
       .map((word) => ({
         word,
-        stats: state.vocab.wordStats[normalizeWordKey(word.english)] || {
+        stats: libraryStats[normalizeWordKey(word.english)] || {
           testCount: 0,
           errorCount: 0,
         },
@@ -1014,7 +1282,9 @@
     if (rows.length === 0) {
       const empty = document.createElement("p");
       empty.className = "review-empty";
-      empty.textContent = "完成答题后，这里会显示需要重点复习的单词。";
+      empty.textContent = library
+        ? `“${library.name}”完成答题后，这里会显示需要重点复习的单词。`
+        : "请先创建词库并完成答题。";
       elements.wordStatsList.append(empty);
       return;
     }
@@ -1277,6 +1547,25 @@
 
   elements.vocabForm.addEventListener("submit", addVocabRecord);
   elements.wordImportForm.addEventListener("submit", importVocabulary);
+  elements.wordManageSelect.addEventListener("change", () => {
+    if (vocabTest.active) return;
+    state.vocab.manageLibraryId = elements.wordManageSelect.value;
+    saveState();
+    renderWordLibrary();
+  });
+  elements.testLibrarySelect.addEventListener("change", () => {
+    if (vocabTest.active) return;
+    state.vocab.testLibraryId = elements.testLibrarySelect.value;
+    saveState();
+    renderWordStats();
+    const library = getTestLibrary();
+    if (library) {
+      showTestIdle(
+        `已选择「${library.name}」`,
+        `这个词库共有 ${library.words.length} 个单词，点击“开始测试”随机抽题。`,
+      );
+    }
+  });
   elements.testStart.addEventListener("click", startVocabTest);
   elements.testStop.addEventListener("click", () => finishVocabTest("manual"));
   elements.spellingForm.addEventListener("submit", submitSpellingAnswer);
@@ -1285,6 +1574,19 @@
   elements.mockReading.addEventListener("input", updateMockPreview);
   elements.noteForm.addEventListener("submit", addNote);
   elements.noteInput.addEventListener("input", syncNoteDraft);
+  vocabTabButtons.forEach((button, index) => {
+    button.addEventListener("click", () => activateVocabTab(button.dataset.vocabTab));
+    button.addEventListener("keydown", (event) => {
+      if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      let targetIndex = index;
+      if (event.key === "ArrowLeft") targetIndex = (index - 1 + vocabTabButtons.length) % vocabTabButtons.length;
+      if (event.key === "ArrowRight") targetIndex = (index + 1) % vocabTabButtons.length;
+      if (event.key === "Home") targetIndex = 0;
+      if (event.key === "End") targetIndex = vocabTabButtons.length - 1;
+      activateVocabTab(vocabTabButtons[targetIndex].dataset.vocabTab, true);
+    });
+  });
 
   elements.noteInput.value = state.noteDraft;
   elements.noteChars.textContent = String(state.noteDraft.length);
@@ -1293,6 +1595,7 @@
   renderTasks();
   renderScores();
   renderVocab();
+  populateLibrarySelects();
   renderWordLibrary();
   renderTestHistory();
   renderWordStats();
