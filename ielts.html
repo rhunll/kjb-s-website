@@ -246,10 +246,60 @@
           </div>
         </section>
 
+        <section class="panel panel-vocab reveal" aria-labelledby="vocab-title">
+          <div class="vocab-heading">
+            <div>
+              <h2 class="vocab-title" id="vocab-title">
+                <span class="vocab-index">03 / VOCAB</span>
+                - 词汇背诵
+              </h2>
+              <p class="vocab-subtitle">把每天翻过的页数，变成看得见的积累。</p>
+            </div>
+            <span class="vocab-status">
+              <span aria-hidden="true"></span>
+              今日可打卡
+            </span>
+          </div>
+
+          <div class="vocab-content">
+            <div class="vocab-stats" aria-label="词汇背诵数据">
+              <div class="vocab-stat">
+                <span>今天已背诵</span>
+                <p><strong id="vocab-today">0</strong><small>页</small></p>
+              </div>
+              <div class="vocab-stat">
+                <span>累计背诵</span>
+                <p><strong id="vocab-total">0</strong><small>页</small></p>
+              </div>
+            </div>
+
+            <form class="vocab-form" id="vocab-form" autocomplete="off">
+              <label for="vocab-input">本次背诵页数</label>
+              <div class="vocab-control">
+                <span class="vocab-input-wrap">
+                  <input
+                    id="vocab-input"
+                    name="pages"
+                    type="number"
+                    min="1"
+                    step="1"
+                    inputmode="numeric"
+                    placeholder="3"
+                    required
+                  />
+                  <span>页</span>
+                </span>
+                <button class="button button-primary" type="submit">打卡记录</button>
+              </div>
+            </form>
+          </div>
+          <p class="vocab-footnote">按自然日记录，今日数据会在新的一天自动重新开始计数。</p>
+        </section>
+
         <section class="panel panel-mocks reveal" aria-labelledby="mocks-title">
           <div class="panel-heading mock-heading">
             <div>
-              <span class="section-index">03 / PRACTICE</span>
+              <span class="section-index">04 / PRACTICE</span>
               <h2 id="mocks-title">真题模考记录</h2>
             </div>
             <div class="mock-summary" aria-label="模考统计">
@@ -311,7 +361,7 @@
         <section class="panel panel-notes reveal" aria-labelledby="notes-title">
           <div class="panel-heading">
             <div>
-              <span class="section-index">04 / INSIGHT</span>
+              <span class="section-index">05 / INSIGHT</span>
               <h2 id="notes-title">错题与灵感</h2>
             </div>
             <span class="panel-hint" id="note-count">0 条记录</span>

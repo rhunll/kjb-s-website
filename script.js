@@ -13,6 +13,10 @@
       writing: { target: "", current: "" },
       speaking: { target: "", current: "" },
     },
+    vocab: {
+      daily: {},
+      total: 0,
+    },
     mocks: [],
     notes: [],
     noteDraft: "",
@@ -37,6 +41,10 @@
     taskEncouragement: document.querySelector("#task-encouragement"),
     clearCompleted: document.querySelector("#clear-completed"),
     scoreCards: [...document.querySelectorAll(".score-card")],
+    vocabForm: document.querySelector("#vocab-form"),
+    vocabInput: document.querySelector("#vocab-input"),
+    vocabToday: document.querySelector("#vocab-today"),
+    vocabTotal: document.querySelector("#vocab-total"),
     mockForm: document.querySelector("#mock-form"),
     mockName: document.querySelector("#mock-name"),
     mockListening: document.querySelector("#mock-listening"),
@@ -67,6 +75,18 @@
 
       const fresh = cloneDefaultState();
       const loadedScores = saved.scores || {};
+      const loadedVocab = saved.vocab && typeof saved.vocab === "object" ? saved.vocab : {};
+      const vocabDaily =
+        loadedVocab.daily && typeof loadedVocab.daily === "object" ? loadedVocab.daily : {};
+      const cleanDaily = Object.entries(vocabDaily).reduce((result, [date, value]) => {
+        const pages = Number(value);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(date) && Number.isInteger(pages) && pages > 0) {
+          result[date] = pages;
+        }
+        return result;
+      }, {});
+      const savedTotal = Number(loadedVocab.total);
+      const derivedTotal = Object.values(cleanDaily).reduce((sum, pages) => sum + pages, 0);
 
       return {
         tasks: Array.isArray(saved.tasks) ? saved.tasks : fresh.tasks,
@@ -77,6 +97,10 @@
           };
           return result;
         }, {}),
+        vocab: {
+          daily: cleanDaily,
+          total: Number.isInteger(savedTotal) && savedTotal >= derivedTotal ? savedTotal : derivedTotal,
+        },
         mocks: Array.isArray(saved.mocks) ? saved.mocks : fresh.mocks,
         notes: Array.isArray(saved.notes) ? saved.notes : fresh.notes,
         noteDraft: stringValue(saved.noteDraft),
@@ -132,6 +156,13 @@
     }).format(new Date());
   }
 
+  function localDateKey(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
   function updateCountdown() {
     const days = daysUntilExam();
     const totalWindow = 365;
@@ -153,6 +184,8 @@
     } else {
       elements.countdownNote.textContent = "保持专注，按自己的节奏前进。";
     }
+
+    renderVocab();
   }
 
   function renderTasks() {
@@ -275,6 +308,37 @@
     const progress =
       target > 0 && current > 0 ? Math.max(4, Math.min(100, (current / target) * 100)) : 0;
     card.querySelector(".mini-track span").style.width = `${progress}%`;
+  }
+
+  function renderVocab() {
+    const todayPages = state.vocab.daily[localDateKey()] || 0;
+    elements.vocabToday.textContent = String(todayPages);
+    elements.vocabTotal.textContent = String(state.vocab.total);
+  }
+
+  function addVocabRecord(event) {
+    event.preventDefault();
+    const pages = Number(elements.vocabInput.value);
+
+    if (!Number.isInteger(pages) || pages <= 0) {
+      showToast("请输入大于 0 的整数页数");
+      elements.vocabInput.focus();
+      return;
+    }
+
+    const today = localDateKey();
+    state.vocab.daily[today] = (state.vocab.daily[today] || 0) + pages;
+    state.vocab.total += pages;
+    saveState();
+    renderVocab();
+    elements.vocabForm.reset();
+    elements.vocabInput.focus();
+
+    elements.vocabToday.closest(".vocab-stat").classList.remove("is-updated");
+    requestAnimationFrame(() => {
+      elements.vocabToday.closest(".vocab-stat").classList.add("is-updated");
+    });
+    showToast(`已记录 ${pages} 页词汇背诵`);
   }
 
   const listeningBands = [
@@ -512,6 +576,7 @@
     });
   });
 
+  elements.vocabForm.addEventListener("submit", addVocabRecord);
   elements.mockForm.addEventListener("submit", addMock);
   elements.mockListening.addEventListener("input", updateMockPreview);
   elements.mockReading.addEventListener("input", updateMockPreview);
@@ -524,6 +589,7 @@
   updateCountdown();
   renderTasks();
   renderScores();
+  renderVocab();
   renderMocks();
   renderNotes();
   updateMockPreview();
