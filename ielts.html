@@ -383,12 +383,14 @@
                 placeholder="例如：雅思核心词"
               />
               <label for="word-import-input">批量导入单词</label>
-              <p class="word-format-hint">每行一个单词，严格使用：英文/同义词,词性,中文</p>
+              <p class="word-format-hint">
+                建议格式：英文,词性,中文释义。支持双词性及多个中文释义
+              </p>
               <textarea
                 id="word-import-input"
                 rows="7"
                 spellcheck="false"
-                placeholder="abandon/desert,v.,放弃&#10;benefit,n.,益处&#10;delicate,adj.,精美的"
+                placeholder="pledge,v./n.,承诺,发誓,抵押&#10;abandon/desert,v.,放弃&#10;benefit,n.,益处"
               ></textarea>
               <div class="word-import-actions">
                 <select id="word-import-mode" aria-label="导入方式">

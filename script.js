@@ -248,7 +248,7 @@
   function parseWordAliases(value) {
     const parts = stringValue(value)
       .split("/")
-      .map((part) => part.trim())
+      .map((part) => part.trim().replace(/\s+/g, " "))
       .filter(Boolean);
     return {
       english: parts[0] || "",
@@ -701,6 +701,50 @@
     elements.wordImportMessage.dataset.type = type;
   }
 
+  function parseVocabularyImportText(text) {
+    const lines = stringValue(text)
+      .split(/\r?\n/)
+      .map((line) => line.replace(/^\uFEFF/, "").trim())
+      .filter(Boolean);
+    const words = [];
+    let skippedCount = 0;
+
+    lines.forEach((line) => {
+      const firstComma = line.indexOf(",");
+      const secondComma = firstComma >= 0 ? line.indexOf(",", firstComma + 1) : -1;
+      if (firstComma < 0 || secondComma < 0) {
+        skippedCount += 1;
+        return;
+      }
+
+      const aliases = parseWordAliases(line.slice(0, firstComma));
+      const pos = line
+        .slice(firstComma + 1, secondComma)
+        .trim()
+        .replace(/\s+/g, "");
+      const meaning = line
+        .slice(secondComma + 1)
+        .split(/[,，]/)
+        .map((part) => part.trim().replace(/\s+/g, " "))
+        .filter(Boolean)
+        .join("/");
+
+      if (!aliases.english || !pos || !meaning) {
+        skippedCount += 1;
+        return;
+      }
+
+      words.push({
+        english: aliases.english.slice(0, 80),
+        synonyms: aliases.synonyms.map((item) => item.slice(0, 80)),
+        pos: pos.slice(0, 20),
+        meaning: meaning.slice(0, 120),
+      });
+    });
+
+    return { words, skippedCount };
+  }
+
   function getLibraryById(id) {
     return state.vocab.libraries.find((library) => library.id === id) || null;
   }
@@ -836,38 +880,23 @@
       return;
     }
 
-    const lines = elements.wordImportInput.value
-      .split(/\r?\n/)
-      .map((line) => line.replace(/^\uFEFF/, "").trim())
-      .filter(Boolean);
+    const { words: parsedWords, skippedCount } = parseVocabularyImportText(
+      elements.wordImportInput.value,
+    );
 
-    if (lines.length === 0) {
+    if (parsedWords.length === 0 && skippedCount === 0) {
       setWordImportMessage("请至少粘贴一行词库内容。", "error");
       elements.wordImportInput.focus();
       return;
     }
 
-    const parsedWords = [];
-    for (let index = 0; index < lines.length; index += 1) {
-      const parts = lines[index].split(",").map((part) => part.trim());
-      if (parts.length !== 3 || parts.some((part) => !part)) {
-        setWordImportMessage(
-          `第 ${index + 1} 行格式错误，请使用：英文/同义词,词性,中文`,
-          "error",
-        );
-        return;
-      }
-      const aliases = parseWordAliases(parts[0]);
-      if (!aliases.english) {
-        setWordImportMessage(`第 ${index + 1} 行缺少英文主词。`, "error");
-        return;
-      }
-      parsedWords.push({
-        english: aliases.english.slice(0, 80),
-        synonyms: aliases.synonyms.map((item) => item.slice(0, 80)),
-        pos: parts[1].slice(0, 20),
-        meaning: parts[2].slice(0, 120),
-      });
+    if (parsedWords.length === 0) {
+      setWordImportMessage(
+        `成功导入 0 个，跳过 ${skippedCount} 个格式异常行。`,
+        "error",
+      );
+      showToast("没有可导入的有效单词");
+      return;
     }
 
     const replaceMode = elements.wordImportMode.value === "replace";
@@ -936,7 +965,7 @@
     renderWordStats();
     elements.wordImportForm.reset();
     setWordImportMessage(
-      `“${library.name}”导入完成：新增 ${addedCount} 个，更新 ${updatedCount} 个，当前共 ${library.words.length} 个单词。`,
+      `“${library.name}”导入完成：成功导入 ${parsedWords.length} 个，跳过 ${skippedCount} 个格式异常行。新增 ${addedCount} 个，更新 ${updatedCount} 个，当前共 ${library.words.length} 个单词。`,
       "success",
     );
     showToast(`词库“${library.name}”已保存`);
