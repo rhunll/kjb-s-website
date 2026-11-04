@@ -2971,16 +2971,24 @@ textarea:focus-visible {
 }
 
 .test-prompt {
-  min-height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  min-height: 88px;
   margin-bottom: 29px;
+  padding-inline: clamp(4px, 2vw, 18px);
   color: #4a3f35;
   font-family: var(--serif);
-  font-size: clamp(42px, 6.4vw, 78px);
+  font-size: clamp(32px, 4.6vw, 56px);
   font-weight: 400;
-  line-height: 1.1;
-  letter-spacing: -0.035em;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
   text-align: center;
+  text-wrap: balance;
   overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .test-spelling {
@@ -3264,9 +3272,9 @@ textarea:focus-visible {
   }
 
   .test-prompt {
-    min-height: 78px;
+    min-height: 72px;
     margin-bottom: 24px;
-    font-size: clamp(38px, 13vw, 58px);
+    font-size: clamp(30px, 9.5vw, 44px);
   }
 
   .test-spelling {
