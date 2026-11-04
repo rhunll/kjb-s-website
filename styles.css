@@ -3745,6 +3745,33 @@ textarea:focus-visible {
   text-align: center;
 }
 
+.review-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.clear-history-button {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #8c4d46;
+  background: #f2f0ed;
+  font-size: 8px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.clear-history-button:hover,
+.clear-history-button:focus-visible {
+  border-color: rgba(140, 77, 70, 0.18);
+  color: #753c37;
+  background: #eee9e5;
+}
+
 @keyframes history-modal-in {
   from {
     opacity: 0;
@@ -3778,6 +3805,16 @@ textarea:focus-visible {
   .history-modal-body {
     max-height: calc(100vh - 145px);
     padding: 14px 18px 20px;
+  }
+
+  .review-heading-actions {
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .clear-history-button {
+    min-height: 28px;
   }
 }
 

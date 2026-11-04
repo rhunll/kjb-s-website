@@ -85,6 +85,7 @@
     testFeedback: document.querySelector("#test-feedback"),
     testHistoryList: document.querySelector("#test-history-list"),
     wordStatsList: document.querySelector("#word-stats-list"),
+    clearTestHistory: document.querySelector("#clear-test-history"),
     historyModal: document.querySelector("#history-modal"),
     historyModalTitle: document.querySelector("#history-modal-title"),
     historyModalMeta: document.querySelector("#history-modal-meta"),
@@ -1532,6 +1533,51 @@
     showToast("测试历史记录已删除");
   }
 
+  function clearAllTestData() {
+    if (!window.confirm("确定清空所有测试历史和单词熟练度数据吗？")) return;
+
+    const wasTesting = vocabTest.active;
+    if (wasTesting) {
+      window.clearTimeout(vocabTest.timer);
+      vocabTest = {
+        active: false,
+        libraryId: "",
+        libraryName: "",
+        mode: getSelectedTestMode(),
+        remainingIds: [],
+        currentWord: null,
+        questionType: "",
+        answered: 0,
+        correct: 0,
+        wrong: 0,
+        wrongWords: [],
+        wordResults: [],
+        locked: false,
+        timer: null,
+      };
+    }
+
+    state.vocab.testHistory = [];
+    state.vocab.wordStats = {};
+    saveState();
+    renderTestHistory();
+    renderWordStats();
+
+    if (wasTesting) {
+      updateTestDashboard();
+      syncTestControls();
+      const library = getTestLibrary();
+      showTestIdle(
+        "测试数据已清空",
+        library
+          ? `“${library.name}”的词库内容已保留，可以重新开始测试。`
+          : "请先导入词库后开始测试。",
+      );
+    }
+
+    showToast("测试历史与熟练度数据已清空");
+  }
+
   function renderWordStats() {
     const library = getTestLibrary();
     const libraryStats = library ? getLibraryStats(library.id) : {};
@@ -1851,6 +1897,7 @@
   elements.historyModal.addEventListener("click", (event) => {
     if (event.target === elements.historyModal) closeHistoryDetails();
   });
+  elements.clearTestHistory.addEventListener("click", clearAllTestData);
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeHistoryDetails();
   });
