@@ -124,6 +124,7 @@
     correct: 0,
     wrong: 0,
     wrongWords: [],
+    wordResults: [],
     locked: false,
     timer: null,
   };
@@ -216,6 +217,28 @@
                 : null;
             })
             .filter(Boolean);
+          const wordResults = (Array.isArray(record.wordResults) ? record.wordResults : [])
+            .map((word) => {
+              if (!word || typeof word !== "object") return null;
+              const english = stringValue(word.english).trim();
+              const pos = stringValue(word.pos).trim();
+              const meaning = stringValue(word.meaning).trim();
+              if (!english || !pos || !meaning) return null;
+              const storedErrorCount = Number(word.errorCount);
+              const errorCount = Number.isInteger(storedErrorCount)
+                ? Math.min(1, Math.max(0, storedErrorCount))
+                : word.isCorrect === false
+                  ? 1
+                  : 0;
+              return {
+                wordKey: normalizeWordKey(english),
+                english,
+                pos,
+                meaning,
+                errorCount,
+              };
+            })
+            .filter(Boolean);
           return {
             id: stringValue(record.id) || uid(),
             libraryId: library?.id || storedLibraryId || fallbackLibraryId,
@@ -223,6 +246,7 @@
               stringValue(record.libraryName).trim() || library?.name || "默认词库",
             mode,
             wrongWords,
+            wordResults,
             createdAt: Number.isNaN(Date.parse(record.createdAt))
               ? new Date().toISOString()
               : new Date(record.createdAt).toISOString(),
@@ -1041,6 +1065,7 @@
         correct: 0,
         wrong: 0,
         wrongWords: [],
+        wordResults: [],
         locked: false,
         timer: null,
       };
@@ -1163,6 +1188,7 @@
       correct: 0,
       wrong: 0,
       wrongWords: [],
+      wordResults: [],
       locked: false,
       timer: null,
     };
@@ -1297,6 +1323,13 @@
     }
 
     const key = normalizeWordKey(word.english);
+    vocabTest.wordResults.push({
+      wordKey: key,
+      english: word.english,
+      pos: word.pos,
+      meaning: word.meaning,
+      errorCount: isCorrect ? 0 : 1,
+    });
     const libraryStats = getLibraryStats(vocabTest.libraryId);
     const stats = libraryStats[key] || { testCount: 0, errorCount: 0 };
     stats.testCount += 1;
@@ -1330,6 +1363,7 @@
       correct: vocabTest.correct,
       wrong: vocabTest.wrong,
       wrongWords: vocabTest.wrongWords.map((word) => ({ ...word })),
+      wordResults: vocabTest.wordResults.map((word) => ({ ...word })),
       accuracy: total ? Math.round((vocabTest.correct / total) * 100) : 0,
     });
     saveState();
@@ -1463,9 +1497,38 @@
     const record = state.vocab.testHistory.find((item) => item.id === id);
     if (!record) return;
     if (!window.confirm("确定删除这条测试历史记录吗？")) return;
+
+    if (Array.isArray(record.wordResults) && record.wordResults.length > 0) {
+      const library =
+        getLibraryById(record.libraryId) ||
+        state.vocab.libraries.find((item) => item.name === record.libraryName);
+      const libraryId = library?.id || record.libraryId;
+      const libraryStats = libraryId ? state.vocab.wordStats[libraryId] : null;
+
+      if (libraryStats) {
+        record.wordResults.forEach((wordResult) => {
+          const key =
+            wordResult.wordKey || normalizeWordKey(wordResult.english || "");
+          const stats = libraryStats[key];
+          if (!stats || stats.testCount <= 0) return;
+
+          stats.testCount -= 1;
+          stats.errorCount = Math.max(
+            0,
+            stats.errorCount - Math.max(0, Number(wordResult.errorCount) || 0),
+          );
+          if (stats.testCount <= 0) delete libraryStats[key];
+        });
+        if (Object.keys(libraryStats).length === 0) {
+          delete state.vocab.wordStats[libraryId];
+        }
+      }
+    }
+
     state.vocab.testHistory = state.vocab.testHistory.filter((item) => item.id !== id);
     saveState();
     renderTestHistory();
+    renderWordStats();
     showToast("测试历史记录已删除");
   }
 
