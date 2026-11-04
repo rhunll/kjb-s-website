@@ -451,6 +451,39 @@
             </div>
           </div>
 
+          <div class="test-mode-panel">
+            <fieldset class="test-mode-picker">
+              <legend>测试模式</legend>
+              <div class="test-mode-options">
+                <label class="test-mode-option">
+                  <input type="radio" name="test-mode" value="spelling" />
+                  <span>
+                    <strong>仅拼写</strong>
+                    <small>看中文写英文</small>
+                  </span>
+                </label>
+                <label class="test-mode-option">
+                  <input type="radio" name="test-mode" value="choice" />
+                  <span>
+                    <strong>仅选择</strong>
+                    <small>看英文选中文</small>
+                  </span>
+                </label>
+                <label class="test-mode-option">
+                  <input type="radio" name="test-mode" value="mixed" checked />
+                  <span>
+                    <strong>混合随机</strong>
+                    <small>两种题型交替</small>
+                  </span>
+                </label>
+              </div>
+            </fieldset>
+            <div class="test-mode-status">
+              <span>当前模式</span>
+              <strong id="test-mode-status">两题型混合</strong>
+            </div>
+          </div>
+
           <div class="test-dashboard" aria-label="本次测试实时数据">
             <div>
               <span>已答</span>

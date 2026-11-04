@@ -64,6 +64,8 @@
     wordManageSelect: document.querySelector("#word-manage-select"),
     wordLibraryDelete: document.querySelector("#word-library-delete"),
     testLibrarySelect: document.querySelector("#test-library-select"),
+    testModeInputs: [...document.querySelectorAll('input[name="test-mode"]')],
+    testModeStatus: document.querySelector("#test-mode-status"),
     testStart: document.querySelector("#test-start"),
     testStop: document.querySelector("#test-stop"),
     testAnswered: document.querySelector("#test-answered"),
@@ -109,6 +111,7 @@
     active: false,
     libraryId: "",
     libraryName: "",
+    mode: "mixed",
     remainingIds: [],
     currentWord: null,
     questionType: "",
@@ -192,11 +195,15 @@
           const library = cleanLibraries.find(
             (item) => item.id === storedLibraryId || item.name === record.libraryName,
           );
+          const mode = ["spelling", "choice", "mixed"].includes(record.mode)
+            ? record.mode
+            : "mixed";
           return {
             id: stringValue(record.id) || uid(),
             libraryId: library?.id || storedLibraryId || fallbackLibraryId,
             libraryName:
               stringValue(record.libraryName).trim() || library?.name || "默认词库",
+            mode,
             createdAt: Number.isNaN(Date.parse(record.createdAt))
               ? new Date().toISOString()
               : new Date(record.createdAt).toISOString(),
@@ -1007,6 +1014,7 @@
         active: false,
         libraryId: "",
         libraryName: "",
+        mode: "mixed",
         remainingIds: [],
         currentWord: null,
         questionType: "",
@@ -1050,6 +1058,26 @@
     }
   }
 
+  function getTestModeLabel(mode) {
+    return {
+      spelling: "仅拼写",
+      choice: "仅选择",
+      mixed: "两题型混合",
+    }[mode] || "两题型混合";
+  }
+
+  function getSelectedTestMode() {
+    return elements.testModeInputs.find((input) => input.checked)?.value || "mixed";
+  }
+
+  function syncTestModeUI() {
+    const mode = vocabTest.active ? vocabTest.mode : getSelectedTestMode();
+    elements.testModeInputs.forEach((input) => {
+      input.disabled = vocabTest.active;
+    });
+    elements.testModeStatus.textContent = getTestModeLabel(mode);
+  }
+
   function updateTestDashboard() {
     const answered = vocabTest.correct + vocabTest.wrong;
     const accuracy = answered ? Math.round((vocabTest.correct / answered) * 100) : 0;
@@ -1068,6 +1096,7 @@
     elements.wordImportMode.disabled = vocabTest.active;
     elements.wordManageSelect.disabled = vocabTest.active || state.vocab.libraries.length === 0;
     elements.testLibrarySelect.disabled = vocabTest.active || state.vocab.libraries.length === 0;
+    syncTestModeUI();
     elements.wordLibraryList.querySelectorAll(".word-entry-delete").forEach((button) => {
       button.disabled = vocabTest.active;
     });
@@ -1085,16 +1114,17 @@
 
   function startVocabTest() {
     if (vocabTest.active) return;
+    const mode = getSelectedTestMode();
     const library = getTestLibrary();
     if (!library) {
       showTestIdle("还没有可用词库", "请先在“词库管理”中创建并导入词库。");
       showToast("请先创建词库");
       return;
     }
-    if (library.words.length < 4) {
+    if (mode !== "spelling" && library.words.length < 4) {
       showTestIdle(
         "词库至少需要 4 个单词",
-        `“${library.name}”目前只有 ${library.words.length} 个单词，英译中选择题需要 3 个干扰项。`,
+        `“${library.name}”目前只有 ${library.words.length} 个单词，选择题和混合模式需要至少 4 个单词。`,
       );
       showToast("请先导入至少 4 个单词");
       return;
@@ -1105,6 +1135,7 @@
       active: true,
       libraryId: library.id,
       libraryName: library.name,
+      mode,
       remainingIds: library.words.map((word) => word.id),
       currentWord: null,
       questionType: "",
@@ -1138,7 +1169,12 @@
     }
 
     vocabTest.currentWord = word;
-    vocabTest.questionType = Math.random() < 0.5 ? "spelling" : "choice";
+    vocabTest.questionType =
+      vocabTest.mode === "mixed"
+        ? Math.random() < 0.5
+          ? "spelling"
+          : "choice"
+        : vocabTest.mode;
     vocabTest.locked = false;
     updateTestDashboard();
     elements.testQuestionNumber.textContent = `QUESTION ${String(
@@ -1263,6 +1299,7 @@
       createdAt: new Date().toISOString(),
       libraryId: vocabTest.libraryId,
       libraryName: vocabTest.libraryName,
+      mode: vocabTest.mode,
       total,
       correct: vocabTest.correct,
       wrong: vocabTest.wrong,
@@ -1320,7 +1357,7 @@
 
       const summary = document.createElement("span");
       summary.className = "review-summary";
-      summary.textContent = `${record.total} 题 · 对 ${record.correct} · 错 ${record.wrong}`;
+      summary.textContent = `${getTestModeLabel(record.mode)} · ${record.total} 题 · 对 ${record.correct} · 错 ${record.wrong}`;
 
       const accuracy = document.createElement("strong");
       accuracy.className = "review-accuracy";
@@ -1656,6 +1693,9 @@
         `这个词库共有 ${library.words.length} 个单词，点击“开始测试”随机抽题。`,
       );
     }
+  });
+  elements.testModeInputs.forEach((input) => {
+    input.addEventListener("change", syncTestModeUI);
   });
   elements.testStart.addEventListener("click", startVocabTest);
   elements.testStop.addEventListener("click", () => finishVocabTest("manual"));
