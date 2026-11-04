@@ -85,6 +85,11 @@
     testFeedback: document.querySelector("#test-feedback"),
     testHistoryList: document.querySelector("#test-history-list"),
     wordStatsList: document.querySelector("#word-stats-list"),
+    historyModal: document.querySelector("#history-modal"),
+    historyModalTitle: document.querySelector("#history-modal-title"),
+    historyModalMeta: document.querySelector("#history-modal-meta"),
+    historyModalBody: document.querySelector("#history-modal-body"),
+    historyModalClose: document.querySelector("#history-modal-close"),
     mockForm: document.querySelector("#mock-form"),
     mockName: document.querySelector("#mock-name"),
     mockListening: document.querySelector("#mock-listening"),
@@ -118,9 +123,11 @@
     answered: 0,
     correct: 0,
     wrong: 0,
+    wrongWords: [],
     locked: false,
     timer: null,
   };
+  let lastHistoryTrigger = null;
 
   function cloneDefaultState() {
     return JSON.parse(JSON.stringify(defaultState));
@@ -198,12 +205,24 @@
           const mode = ["spelling", "choice", "mixed"].includes(record.mode)
             ? record.mode
             : "mixed";
+          const wrongWords = (Array.isArray(record.wrongWords) ? record.wrongWords : [])
+            .map((word) => {
+              if (!word || typeof word !== "object") return null;
+              const english = stringValue(word.english).trim();
+              const pos = stringValue(word.pos).trim();
+              const meaning = stringValue(word.meaning).trim();
+              return english && pos && meaning
+                ? { english, pos, meaning }
+                : null;
+            })
+            .filter(Boolean);
           return {
             id: stringValue(record.id) || uid(),
             libraryId: library?.id || storedLibraryId || fallbackLibraryId,
             libraryName:
               stringValue(record.libraryName).trim() || library?.name || "默认词库",
             mode,
+            wrongWords,
             createdAt: Number.isNaN(Date.parse(record.createdAt))
               ? new Date().toISOString()
               : new Date(record.createdAt).toISOString(),
@@ -1021,6 +1040,7 @@
         answered: 0,
         correct: 0,
         wrong: 0,
+        wrongWords: [],
         locked: false,
         timer: null,
       };
@@ -1142,6 +1162,7 @@
       answered: 0,
       correct: 0,
       wrong: 0,
+      wrongWords: [],
       locked: false,
       timer: null,
     };
@@ -1266,6 +1287,11 @@
       elements.testFeedback.className = "test-feedback is-correct";
     } else {
       vocabTest.wrong += 1;
+      vocabTest.wrongWords.push({
+        english: word.english,
+        pos: word.pos,
+        meaning: word.meaning,
+      });
       elements.testFeedback.textContent = `回答错误，正确答案是 ${word.english}`;
       elements.testFeedback.className = "test-feedback is-wrong";
     }
@@ -1303,6 +1329,7 @@
       total,
       correct: vocabTest.correct,
       wrong: vocabTest.wrong,
+      wrongWords: vocabTest.wrongWords.map((word) => ({ ...word })),
       accuracy: total ? Math.round((vocabTest.correct / total) * 100) : 0,
     });
     saveState();
@@ -1363,6 +1390,13 @@
       accuracy.className = "review-accuracy";
       accuracy.textContent = `${record.accuracy}%`;
 
+      const detailButton = document.createElement("button");
+      detailButton.className = "history-detail";
+      detailButton.type = "button";
+      detailButton.textContent = "查看详情";
+      detailButton.setAttribute("aria-label", `查看 ${formatReviewDate(record.createdAt)} 的错题详情`);
+      detailButton.addEventListener("click", () => openHistoryDetails(record.id, detailButton));
+
       const deleteButton = document.createElement("button");
       deleteButton.className = "history-delete";
       deleteButton.type = "button";
@@ -1370,9 +1404,59 @@
       deleteButton.setAttribute("aria-label", `删除 ${record.libraryName} 的测试记录`);
       deleteButton.addEventListener("click", () => deleteTestHistory(record.id));
 
-      row.append(date, library, summary, accuracy, deleteButton);
+      const actions = document.createElement("div");
+      actions.className = "history-actions";
+      actions.append(detailButton, deleteButton);
+
+      row.append(date, library, summary, accuracy, actions);
       elements.testHistoryList.append(row);
     });
+  }
+
+  function openHistoryDetails(id, trigger) {
+    const record = state.vocab.testHistory.find((item) => item.id === id);
+    if (!record) return;
+    const recordDate = new Date(record.createdAt);
+    const dateLabel = Number.isNaN(recordDate.getTime())
+      ? "--"
+      : formatVocabDate(localDateKey(recordDate));
+
+    lastHistoryTrigger = trigger instanceof HTMLElement ? trigger : null;
+    elements.historyModalTitle.textContent = `${dateLabel} 测试错题详情`;
+    elements.historyModalMeta.textContent =
+      `${record.libraryName || "默认词库"} · ${getTestModeLabel(record.mode)} · 错 ${record.wrong} 题`;
+    elements.historyModalBody.replaceChildren();
+
+    if (!record.wrongWords || record.wrongWords.length === 0) {
+      const perfect = document.createElement("p");
+      perfect.className = "history-perfect";
+      perfect.textContent =
+        record.wrong > 0
+          ? "该历史记录未保存具体错题详情。"
+          : "太棒了，本次测试全对！";
+      elements.historyModalBody.append(perfect);
+    } else {
+      const list = document.createElement("ul");
+      list.className = "history-wrong-list";
+      record.wrongWords.forEach((word) => {
+        const item = document.createElement("li");
+        item.textContent = `${word.english} ${word.pos} ${word.meaning}`;
+        list.append(item);
+      });
+      elements.historyModalBody.append(list);
+    }
+
+    elements.historyModal.hidden = false;
+    document.body.classList.add("history-modal-open");
+    elements.historyModalClose.focus();
+  }
+
+  function closeHistoryDetails() {
+    if (elements.historyModal.hidden) return;
+    elements.historyModal.hidden = true;
+    document.body.classList.remove("history-modal-open");
+    if (lastHistoryTrigger?.isConnected) lastHistoryTrigger.focus();
+    lastHistoryTrigger = null;
   }
 
   function deleteTestHistory(id) {
@@ -1700,6 +1784,13 @@
   elements.testStart.addEventListener("click", startVocabTest);
   elements.testStop.addEventListener("click", () => finishVocabTest("manual"));
   elements.spellingForm.addEventListener("submit", submitSpellingAnswer);
+  elements.historyModalClose.addEventListener("click", closeHistoryDetails);
+  elements.historyModal.addEventListener("click", (event) => {
+    if (event.target === elements.historyModal) closeHistoryDetails();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeHistoryDetails();
+  });
   elements.mockForm.addEventListener("submit", addMock);
   elements.mockListening.addEventListener("input", updateMockPreview);
   elements.mockReading.addEventListener("input", updateMockPreview);

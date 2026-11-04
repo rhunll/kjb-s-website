@@ -692,6 +692,27 @@
       <p>BUILT FOR FOCUS · <span id="footer-year">2026</span></p>
     </footer>
 
+    <div class="history-modal-backdrop" id="history-modal" hidden>
+      <section
+        class="history-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="history-modal-title"
+      >
+        <div class="history-modal-head">
+          <div>
+            <span>WRONG ANSWERS</span>
+            <h2 id="history-modal-title">测试错题详情</h2>
+            <p id="history-modal-meta"></p>
+          </div>
+          <button class="history-modal-close" id="history-modal-close" type="button" aria-label="关闭">
+            ×
+          </button>
+        </div>
+        <div class="history-modal-body" id="history-modal-body"></div>
+      </section>
+    </div>
+
     <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
 
     <template id="task-template">
