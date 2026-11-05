@@ -1331,16 +1331,29 @@
     const acceptedAnswers = [
       vocabTest.currentWord.english,
       ...(vocabTest.currentWord.synonyms || []),
-    ].map((item) => item.toLocaleLowerCase());
-    const isCorrect = acceptedAnswers.includes(answer.toLocaleLowerCase());
-    resolveVocabAnswer(vocabTest.currentWord, isCorrect);
+    ].map((item) => normalizeWordKey(item));
+    const normalizedAnswer = normalizeWordKey(answer);
+    const isCorrect = acceptedAnswers.includes(normalizedAnswer);
+    const matchedSynonym =
+      isCorrect && normalizedAnswer !== normalizeWordKey(vocabTest.currentWord.english);
+    resolveVocabAnswer(vocabTest.currentWord, isCorrect, matchedSynonym);
   }
 
-  function resolveVocabAnswer(word, isCorrect) {
+  function resolveVocabAnswer(word, isCorrect, matchedSynonym = false) {
+    let nextQuestionDelay = 2000;
+
     if (isCorrect) {
       vocabTest.correct += 1;
-      elements.testFeedback.textContent = "回答正确";
-      elements.testFeedback.className = "test-feedback is-correct";
+      if (matchedSynonym) {
+        const standardAnswer = [word.english, ...(word.synonyms || [])].join("/");
+        elements.testFeedback.textContent = `同义词正确，标准答案：${standardAnswer}`;
+        elements.testFeedback.className = "test-feedback is-correct is-synonym";
+        nextQuestionDelay = 2600;
+      } else {
+        elements.testFeedback.textContent = "回答正确";
+        elements.testFeedback.className = "test-feedback is-correct";
+        if (vocabTest.questionType === "spelling") nextQuestionDelay = 500;
+      }
     } else {
       vocabTest.wrong += 1;
       vocabTest.wrongWords.push({
@@ -1365,7 +1378,7 @@
     vocabTest.timer = window.setTimeout(() => {
       vocabTest.timer = null;
       nextVocabQuestion();
-    }, 2000);
+    }, nextQuestionDelay);
   }
 
   function accumulateTestWordStats(libraryId, wordResults) {
