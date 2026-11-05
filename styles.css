@@ -2666,25 +2666,14 @@ textarea:focus-visible {
 }
 
 .word-import-actions {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 9px;
+  display: flex;
+  justify-content: flex-end;
   margin-top: 10px;
-}
-
-.word-import-actions select {
-  min-width: 0;
-  height: 40px;
-  padding: 0 32px 0 11px;
-  border: 1px solid var(--line-strong);
-  border-radius: 9px;
-  color: var(--text-secondary);
-  background: #ffffff;
-  font-size: 10px;
 }
 
 .word-import-actions .button {
   height: 40px;
+  min-width: 108px;
 }
 
 .word-import-message {
@@ -3220,7 +3209,11 @@ textarea:focus-visible {
   }
 
   .word-import-actions {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+
+  .word-import-actions .button {
+    width: 100%;
   }
 
   .word-entry {

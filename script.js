@@ -56,7 +56,6 @@
     wordCount: document.querySelector("#word-count"),
     wordImportForm: document.querySelector("#word-import-form"),
     wordImportInput: document.querySelector("#word-import-input"),
-    wordImportMode: document.querySelector("#word-import-mode"),
     wordImportButton: document.querySelector("#word-import-button"),
     wordImportMessage: document.querySelector("#word-import-message"),
     wordLibraryList: document.querySelector("#word-library-list"),
@@ -950,7 +949,6 @@
       return;
     }
 
-    const replaceMode = elements.wordImportMode.value === "replace";
     let library = state.vocab.libraries.find(
       (item) => item.name.toLocaleLowerCase() === libraryName.toLocaleLowerCase(),
     );
@@ -965,45 +963,66 @@
     }
 
     const wordMap = new Map();
-    if (!replaceMode) {
-      library.words.forEach((word) => {
-        wordMap.set(normalizeWordKey(word.english), word);
-      });
-    }
+    library.words.forEach((word) => {
+      wordMap.set(normalizeWordKey(word.english), word);
+    });
 
     const now = new Date().toISOString();
     let addedCount = 0;
     let updatedCount = 0;
     let mergedSynonymCount = 0;
     parsedWords.forEach((word) => {
-      if (!replaceMode && word.synonyms.length > 0) {
-        const incomingKeys = new Set(
-          [word.english, ...word.synonyms].map((item) => normalizeWordKey(item)),
-        );
-        [...wordMap.entries()].forEach(([existingKey, existingWord]) => {
+      const key = normalizeWordKey(word.english);
+      const incomingKeys = new Set(
+        [word.english, ...word.synonyms].map((item) => normalizeWordKey(item)),
+      );
+      const matchingEntries = [...wordMap.entries()].filter(([, existingWord]) => {
           const existingKeys = new Set(
             [existingWord.english, ...(existingWord.synonyms || [])].map((item) =>
               normalizeWordKey(item),
             ),
           );
-          const hasOverlap = [...incomingKeys].some((item) => existingKeys.has(item));
-          if (hasOverlap) {
-            wordMap.delete(existingKey);
-            mergedSynonymCount += 1;
-          }
+        return [...incomingKeys].some((item) => existingKeys.has(item));
         });
-      }
 
-      const key = normalizeWordKey(word.english);
-      const existing = wordMap.get(key);
-      if (existing) {
-        updatedCount += 1;
+      if (word.synonyms.length > 0) {
+        matchingEntries.forEach(([existingKey]) => wordMap.delete(existingKey));
+        mergedSynonymCount += matchingEntries.length;
         wordMap.set(key, {
-          ...existing,
+          id: uid(),
           english: word.english,
           synonyms: word.synonyms,
           pos: word.pos,
           meaning: word.meaning,
+          createdAt: now,
+        });
+        addedCount += 1;
+        return;
+      }
+
+      const existing = wordMap.get(key);
+      if (existing) {
+        matchingEntries.forEach(([existingKey]) => {
+          if (existingKey !== key) wordMap.delete(existingKey);
+        });
+        updatedCount += 1;
+        wordMap.set(key, {
+          ...existing,
+          english: word.english,
+          synonyms: [],
+          pos: word.pos,
+          meaning: word.meaning,
+        });
+      } else if (matchingEntries.length > 0) {
+        matchingEntries.forEach(([existingKey]) => wordMap.delete(existingKey));
+        updatedCount += 1;
+        wordMap.set(key, {
+          id: uid(),
+          english: word.english,
+          synonyms: [],
+          pos: word.pos,
+          meaning: word.meaning,
+          createdAt: now,
         });
       } else {
         addedCount += 1;
@@ -1019,13 +1038,6 @@
     });
 
     library.words = [...wordMap.values()];
-    if (replaceMode) {
-      const currentKeys = new Set(library.words.map((word) => normalizeWordKey(word.english)));
-      const libraryStats = getLibraryStats(library.id);
-      Object.keys(libraryStats).forEach((key) => {
-        if (!currentKeys.has(key)) delete libraryStats[key];
-      });
-    }
 
     state.vocab.manageLibraryId = library.id;
     state.vocab.testLibraryId = library.id;
@@ -1035,7 +1047,7 @@
     renderWordStats();
     elements.wordImportForm.reset();
     setWordImportMessage(
-      `“${library.name}”导入完成：成功导入 ${parsedWords.length} 个，跳过 ${skippedCount} 个格式异常行。新增 ${addedCount} 个，更新 ${updatedCount} 个，合并了 ${mergedSynonymCount} 个原有同义词。当前共 ${library.words.length} 个单词。`,
+      `导入完成：新增 ${addedCount} 个，更新替换 ${updatedCount} 个，合并 ${mergedSynonymCount} 个；跳过 ${skippedCount} 个格式异常行。`,
       "success",
     );
     showToast(`词库“${library.name}”已保存`);
@@ -1158,7 +1170,6 @@
     elements.wordLibraryName.disabled = vocabTest.active;
     elements.wordImportButton.disabled = vocabTest.active;
     elements.wordImportInput.disabled = vocabTest.active;
-    elements.wordImportMode.disabled = vocabTest.active;
     elements.wordManageSelect.disabled = vocabTest.active || state.vocab.libraries.length === 0;
     elements.testLibrarySelect.disabled = vocabTest.active || state.vocab.libraries.length === 0;
     syncTestModeUI();
