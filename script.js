@@ -2,6 +2,8 @@
   "use strict";
 
   const STORAGE_KEY = "ielts-command-center:v1";
+  const VOCAB_STORAGE_KEY = "myVocab";
+  const STATS_STORAGE_KEY = "myStats";
   const EXAM_DATE = new Date(2027, 1, 6);
   const SUBJECTS = ["listening", "reading", "writing", "speaking"];
 
@@ -133,14 +135,64 @@
     return JSON.parse(JSON.stringify(defaultState));
   }
 
+  function readStoredState(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
   function loadState() {
     try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-      if (!saved || typeof saved !== "object") return cloneDefaultState();
+      const saved = readStoredState(STORAGE_KEY);
+      const storedVocabulary = readStoredState(VOCAB_STORAGE_KEY);
+      const storedStats = readStoredState(STATS_STORAGE_KEY);
+      if (
+        !saved &&
+        !storedVocabulary &&
+        !storedStats
+      ) {
+        return cloneDefaultState();
+      }
 
+      const baseState = saved && typeof saved === "object" ? saved : {};
       const fresh = cloneDefaultState();
-      const loadedScores = saved.scores || {};
-      const loadedVocab = saved.vocab && typeof saved.vocab === "object" ? saved.vocab : {};
+      const loadedScores = baseState.scores || {};
+      const legacyVocab =
+        baseState.vocab && typeof baseState.vocab === "object" ? baseState.vocab : {};
+      const loadedVocab = {
+        ...legacyVocab,
+        ...(storedVocabulary &&
+        typeof storedVocabulary === "object" &&
+        Array.isArray(storedVocabulary.libraries)
+          ? { libraries: storedVocabulary.libraries }
+          : {}),
+        ...(storedVocabulary &&
+        typeof storedVocabulary === "object" &&
+        "manageLibraryId" in storedVocabulary
+          ? { manageLibraryId: storedVocabulary.manageLibraryId }
+          : {}),
+        ...(storedVocabulary &&
+        typeof storedVocabulary === "object" &&
+        "testLibraryId" in storedVocabulary
+          ? { testLibraryId: storedVocabulary.testLibraryId }
+          : {}),
+        ...(storedStats &&
+        typeof storedStats === "object" &&
+        Array.isArray(storedStats.testHistory)
+          ? { testHistory: storedStats.testHistory }
+          : {}),
+        ...(storedStats &&
+        typeof storedStats === "object" &&
+        storedStats.wordStats &&
+        typeof storedStats.wordStats === "object"
+          ? { wordStats: storedStats.wordStats }
+          : {}),
+      };
       const vocabDaily =
         loadedVocab.daily && typeof loadedVocab.daily === "object" ? loadedVocab.daily : {};
       const cleanDaily = Object.entries(vocabDaily).reduce((result, [date, value]) => {
@@ -265,7 +317,7 @@
       const requestedTestId = stringValue(loadedVocab.testLibraryId);
 
       return {
-        tasks: Array.isArray(saved.tasks) ? saved.tasks : fresh.tasks,
+        tasks: Array.isArray(baseState.tasks) ? baseState.tasks : fresh.tasks,
         scores: SUBJECTS.reduce((result, subject) => {
           result[subject] = {
             target: stringValue(loadedScores[subject]?.target),
@@ -285,9 +337,9 @@
             : fallbackLibraryId,
           testLibraryId: libraryIds.has(requestedTestId) ? requestedTestId : fallbackLibraryId,
         },
-        mocks: Array.isArray(saved.mocks) ? saved.mocks : fresh.mocks,
-        notes: Array.isArray(saved.notes) ? saved.notes : fresh.notes,
-        noteDraft: stringValue(saved.noteDraft),
+        mocks: Array.isArray(baseState.mocks) ? baseState.mocks : fresh.mocks,
+        notes: Array.isArray(baseState.notes) ? baseState.notes : fresh.notes,
+        noteDraft: stringValue(baseState.noteDraft),
       };
     } catch {
       return cloneDefaultState();
@@ -420,9 +472,52 @@
 
   function saveState() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          tasks: state.tasks,
+          scores: state.scores,
+          vocab: {
+            daily: state.vocab.daily,
+            total: state.vocab.total,
+            records: state.vocab.records,
+          },
+          mocks: state.mocks,
+          notes: state.notes,
+          noteDraft: state.noteDraft,
+        }),
+      );
     } catch {
       showToast("本地存储空间不足，本次修改未能保存");
+    }
+  }
+
+  function saveVocabularyState() {
+    try {
+      localStorage.setItem(
+        VOCAB_STORAGE_KEY,
+        JSON.stringify({
+          libraries: state.vocab.libraries,
+          manageLibraryId: state.vocab.manageLibraryId,
+          testLibraryId: state.vocab.testLibraryId,
+        }),
+      );
+    } catch {
+      showToast("词库数据未能保存");
+    }
+  }
+
+  function saveStatsState() {
+    try {
+      localStorage.setItem(
+        STATS_STORAGE_KEY,
+        JSON.stringify({
+          testHistory: state.vocab.testHistory,
+          wordStats: state.vocab.wordStats,
+        }),
+      );
+    } catch {
+      showToast("熟练度数据未能保存");
     }
   }
 
@@ -1040,7 +1135,7 @@
 
     state.vocab.manageLibraryId = library.id;
     state.vocab.testLibraryId = library.id;
-    saveState();
+    saveVocabularyState();
     populateLibrarySelects();
     renderWordLibrary();
     renderWordStats();
@@ -1065,7 +1160,8 @@
     library.words = library.words.filter((item) => item.id !== id);
     const libraryStats = getLibraryStats(library.id);
     delete libraryStats[normalizeWordKey(word.english)];
-    saveState();
+    saveVocabularyState();
+    saveStatsState();
     populateLibrarySelects();
     renderWordLibrary();
     renderWordStats();
@@ -1111,7 +1207,8 @@
     if (state.vocab.manageLibraryId === library.id) state.vocab.manageLibraryId = "";
     if (state.vocab.testLibraryId === library.id) state.vocab.testLibraryId = "";
 
-    saveState();
+    saveVocabularyState();
+    saveStatsState();
     populateLibrarySelects();
     renderWordLibrary();
     renderWordStats();
@@ -1417,7 +1514,7 @@
       wordResults: vocabTest.wordResults.map((word) => ({ ...word })),
       accuracy: total ? Math.round((vocabTest.correct / total) * 100) : 0,
     });
-    saveState();
+    saveStatsState();
     renderTestHistory();
     renderWordStats();
     populateLibrarySelects();
@@ -1577,7 +1674,7 @@
     }
 
     state.vocab.testHistory = state.vocab.testHistory.filter((item) => item.id !== id);
-    saveState();
+    saveStatsState();
     renderTestHistory();
     renderWordStats();
     showToast("测试历史记录已删除");
@@ -1875,14 +1972,14 @@
   elements.wordManageSelect.addEventListener("change", () => {
     if (vocabTest.active) return;
     state.vocab.manageLibraryId = elements.wordManageSelect.value;
-    saveState();
+    saveVocabularyState();
     renderWordLibrary();
   });
   elements.wordLibraryDelete.addEventListener("click", deleteCurrentLibrary);
   elements.testLibrarySelect.addEventListener("change", () => {
     if (vocabTest.active) return;
     state.vocab.testLibraryId = elements.testLibrarySelect.value;
-    saveState();
+    saveVocabularyState();
     renderWordStats();
     const library = getTestLibrary();
     if (library) {
@@ -1927,6 +2024,8 @@
   elements.noteInput.value = state.noteDraft;
   elements.noteChars.textContent = String(state.noteDraft.length);
 
+  saveVocabularyState();
+  saveStatsState();
   updateCountdown();
   renderTasks();
   renderScores();
