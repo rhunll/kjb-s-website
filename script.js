@@ -974,7 +974,26 @@
     const now = new Date().toISOString();
     let addedCount = 0;
     let updatedCount = 0;
+    let mergedSynonymCount = 0;
     parsedWords.forEach((word) => {
+      if (!replaceMode && word.synonyms.length > 0) {
+        const incomingKeys = new Set(
+          [word.english, ...word.synonyms].map((item) => normalizeWordKey(item)),
+        );
+        [...wordMap.entries()].forEach(([existingKey, existingWord]) => {
+          const existingKeys = new Set(
+            [existingWord.english, ...(existingWord.synonyms || [])].map((item) =>
+              normalizeWordKey(item),
+            ),
+          );
+          const hasOverlap = [...incomingKeys].some((item) => existingKeys.has(item));
+          if (hasOverlap) {
+            wordMap.delete(existingKey);
+            mergedSynonymCount += 1;
+          }
+        });
+      }
+
       const key = normalizeWordKey(word.english);
       const existing = wordMap.get(key);
       if (existing) {
@@ -1016,7 +1035,7 @@
     renderWordStats();
     elements.wordImportForm.reset();
     setWordImportMessage(
-      `“${library.name}”导入完成：成功导入 ${parsedWords.length} 个，跳过 ${skippedCount} 个格式异常行。新增 ${addedCount} 个，更新 ${updatedCount} 个，当前共 ${library.words.length} 个单词。`,
+      `“${library.name}”导入完成：成功导入 ${parsedWords.length} 个，跳过 ${skippedCount} 个格式异常行。新增 ${addedCount} 个，更新 ${updatedCount} 个，合并了 ${mergedSynonymCount} 个原有同义词。当前共 ${library.words.length} 个单词。`,
       "success",
     );
     showToast(`词库“${library.name}”已保存`);
