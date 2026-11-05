@@ -84,7 +84,6 @@
     testFeedback: document.querySelector("#test-feedback"),
     testHistoryList: document.querySelector("#test-history-list"),
     wordStatsList: document.querySelector("#word-stats-list"),
-    clearTestHistory: document.querySelector("#clear-test-history"),
     historyModal: document.querySelector("#history-modal"),
     historyModalTitle: document.querySelector("#history-modal-title"),
     historyModalMeta: document.querySelector("#history-modal-meta"),
@@ -1361,19 +1360,26 @@
       meaning: word.meaning,
       errorCount: isCorrect ? 0 : 1,
     });
-    const libraryStats = getLibraryStats(vocabTest.libraryId);
-    const stats = libraryStats[key] || { testCount: 0, errorCount: 0 };
-    stats.testCount += 1;
-    if (!isCorrect) stats.errorCount += 1;
-    libraryStats[key] = stats;
-    saveState();
     updateTestDashboard();
-    renderWordStats();
 
     vocabTest.timer = window.setTimeout(() => {
       vocabTest.timer = null;
       nextVocabQuestion();
     }, 2000);
+  }
+
+  function accumulateTestWordStats(libraryId, wordResults) {
+    if (!libraryId || !Array.isArray(wordResults) || wordResults.length === 0) return;
+    const libraryStats = getLibraryStats(libraryId);
+
+    wordResults.forEach((wordResult) => {
+      const key = wordResult.wordKey || normalizeWordKey(wordResult.english || "");
+      if (!key) return;
+      const stats = libraryStats[key] || { testCount: 0, errorCount: 0 };
+      stats.testCount += 1;
+      stats.errorCount += Math.min(1, Math.max(0, Number(wordResult.errorCount) || 0));
+      libraryStats[key] = stats;
+    });
   }
 
   function finishVocabTest(reason = "manual") {
@@ -1384,6 +1390,7 @@
     vocabTest.locked = true;
 
     const total = vocabTest.correct + vocabTest.wrong;
+    accumulateTestWordStats(vocabTest.libraryId, vocabTest.wordResults);
     state.vocab.testHistory.push({
       id: uid(),
       createdAt: new Date().toISOString(),
@@ -1561,51 +1568,6 @@
     renderTestHistory();
     renderWordStats();
     showToast("测试历史记录已删除");
-  }
-
-  function clearAllTestData() {
-    if (!window.confirm("确定清空所有测试历史和单词熟练度数据吗？")) return;
-
-    const wasTesting = vocabTest.active;
-    if (wasTesting) {
-      window.clearTimeout(vocabTest.timer);
-      vocabTest = {
-        active: false,
-        libraryId: "",
-        libraryName: "",
-        mode: getSelectedTestMode(),
-        remainingIds: [],
-        currentWord: null,
-        questionType: "",
-        answered: 0,
-        correct: 0,
-        wrong: 0,
-        wrongWords: [],
-        wordResults: [],
-        locked: false,
-        timer: null,
-      };
-    }
-
-    state.vocab.testHistory = [];
-    state.vocab.wordStats = {};
-    saveState();
-    renderTestHistory();
-    renderWordStats();
-
-    if (wasTesting) {
-      updateTestDashboard();
-      syncTestControls();
-      const library = getTestLibrary();
-      showTestIdle(
-        "测试数据已清空",
-        library
-          ? `“${library.name}”的词库内容已保留，可以重新开始测试。`
-          : "请先导入词库后开始测试。",
-      );
-    }
-
-    showToast("测试历史与熟练度数据已清空");
   }
 
   function renderWordStats() {
@@ -1927,7 +1889,6 @@
   elements.historyModal.addEventListener("click", (event) => {
     if (event.target === elements.historyModal) closeHistoryDetails();
   });
-  elements.clearTestHistory.addEventListener("click", clearAllTestData);
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeHistoryDetails();
   });
