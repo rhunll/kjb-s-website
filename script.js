@@ -4,6 +4,7 @@
   const STORAGE_KEY = "ielts-command-center:v1";
   const VOCAB_STORAGE_KEY = "myVocab";
   const STATS_STORAGE_KEY = "myStats";
+  const TEST_HISTORY_STORAGE_KEY = "myTestHistory";
   const EXAM_DATE = new Date(2027, 1, 6);
   const SUBJECTS = ["listening", "reading", "writing", "speaking"];
 
@@ -151,10 +152,12 @@
       const saved = readStoredState(STORAGE_KEY);
       const storedVocabulary = readStoredState(VOCAB_STORAGE_KEY);
       const storedStats = readStoredState(STATS_STORAGE_KEY);
+      const storedHistory = readStoredState(TEST_HISTORY_STORAGE_KEY);
       if (
         !saved &&
         !storedVocabulary &&
-        !storedStats
+        !storedStats &&
+        !storedHistory
       ) {
         return cloneDefaultState();
       }
@@ -164,6 +167,12 @@
       const loadedScores = baseState.scores || {};
       const legacyVocab =
         baseState.vocab && typeof baseState.vocab === "object" ? baseState.vocab : {};
+      const historySource =
+        storedHistory && Array.isArray(storedHistory.testHistory)
+          ? storedHistory.testHistory
+          : storedStats && Array.isArray(storedStats.testHistory)
+            ? storedStats.testHistory
+            : legacyVocab.testHistory;
       const loadedVocab = {
         ...legacyVocab,
         ...(storedVocabulary &&
@@ -183,15 +192,11 @@
           : {}),
         ...(storedStats &&
         typeof storedStats === "object" &&
-        Array.isArray(storedStats.testHistory)
-          ? { testHistory: storedStats.testHistory }
-          : {}),
-        ...(storedStats &&
-        typeof storedStats === "object" &&
         storedStats.wordStats &&
         typeof storedStats.wordStats === "object"
           ? { wordStats: storedStats.wordStats }
           : {}),
+        ...(Array.isArray(historySource) ? { testHistory: historySource } : {}),
       };
       const vocabDaily =
         loadedVocab.daily && typeof loadedVocab.daily === "object" ? loadedVocab.daily : {};
@@ -308,10 +313,13 @@
           };
         })
         .filter(Boolean);
-      const cleanWordStats = sanitizeWordStats(
+      let cleanWordStats = sanitizeWordStats(
         loadedVocab.wordStats,
         hadLibraries ? "" : fallbackLibraryId,
       );
+      if (Object.keys(cleanWordStats).length === 0) {
+        cleanWordStats = rebuildWordStatsFromHistory(cleanTestHistory, cleanLibraries);
+      }
       const libraryIds = new Set(cleanLibraries.map((library) => library.id));
       const requestedManageId = stringValue(loadedVocab.manageLibraryId);
       const requestedTestId = stringValue(loadedVocab.testLibraryId);
@@ -466,6 +474,28 @@
     }, {});
   }
 
+  function rebuildWordStatsFromHistory(testHistory, libraries) {
+    const libraryIds = new Set(libraries.map((library) => library.id));
+    return testHistory.reduce((result, record) => {
+      if (!libraryIds.has(record.libraryId) || !Array.isArray(record.wordResults)) {
+        return result;
+      }
+      const libraryStats = (result[record.libraryId] ||= {});
+      record.wordResults.forEach((wordResult) => {
+        const key = wordResult.wordKey || normalizeWordKey(wordResult.english || "");
+        if (!key) return;
+        const stats = libraryStats[key] || { testCount: 0, errorCount: 0 };
+        stats.testCount += 1;
+        stats.errorCount += Math.min(
+          1,
+          Math.max(0, Number(wordResult.errorCount) || 0),
+        );
+        libraryStats[key] = stats;
+      });
+      return result;
+    }, {});
+  }
+
   function stringValue(value) {
     return value === undefined || value === null ? "" : String(value);
   }
@@ -512,12 +542,24 @@
       localStorage.setItem(
         STATS_STORAGE_KEY,
         JSON.stringify({
-          testHistory: state.vocab.testHistory,
           wordStats: state.vocab.wordStats,
         }),
       );
     } catch {
       showToast("熟练度数据未能保存");
+    }
+  }
+
+  function saveHistoryState() {
+    try {
+      localStorage.setItem(
+        TEST_HISTORY_STORAGE_KEY,
+        JSON.stringify({
+          testHistory: state.vocab.testHistory,
+        }),
+      );
+    } catch {
+      showToast("测试历史未能保存");
     }
   }
 
@@ -1162,6 +1204,7 @@
     delete libraryStats[normalizeWordKey(word.english)];
     saveVocabularyState();
     saveStatsState();
+    saveHistoryState();
     populateLibrarySelects();
     renderWordLibrary();
     renderWordStats();
@@ -1514,7 +1557,10 @@
       wordResults: vocabTest.wordResults.map((word) => ({ ...word })),
       accuracy: total ? Math.round((vocabTest.correct / total) * 100) : 0,
     });
+    state.vocab.testLibraryId = vocabTest.libraryId;
+    saveVocabularyState();
     saveStatsState();
+    saveHistoryState();
     renderTestHistory();
     renderWordStats();
     populateLibrarySelects();
@@ -1675,6 +1721,7 @@
 
     state.vocab.testHistory = state.vocab.testHistory.filter((item) => item.id !== id);
     saveStatsState();
+    saveHistoryState();
     renderTestHistory();
     renderWordStats();
     showToast("测试历史记录已删除");
@@ -2026,6 +2073,7 @@
 
   saveVocabularyState();
   saveStatsState();
+  saveHistoryState();
   updateCountdown();
   renderTasks();
   renderScores();
