@@ -22,7 +22,7 @@
       records: [],
       libraries: [],
       testHistory: [],
-      wordStats: {},
+      wordStats: [],
       manageLibraryId: "",
       testLibraryId: "",
     },
@@ -317,7 +317,7 @@
         loadedVocab.wordStats,
         hadLibraries ? "" : fallbackLibraryId,
       );
-      if (Object.keys(cleanWordStats).length === 0) {
+      if (cleanWordStats.length === 0) {
         cleanWordStats = rebuildWordStatsFromHistory(cleanTestHistory, cleanLibraries);
       }
       const libraryIds = new Set(cleanLibraries.map((library) => library.id));
@@ -435,65 +435,117 @@
     return [...libraryMap.values()];
   }
 
-  function sanitizeStatsBucket(rawStats) {
-    return Object.entries(rawStats && typeof rawStats === "object" ? rawStats : {}).reduce(
-      (result, [key, value]) => {
-        const testCount = Number(value?.testCount);
-        const errorCount = Number(value?.errorCount);
-        if (
-          key &&
-          Number.isInteger(testCount) &&
-          testCount >= 0 &&
-          Number.isInteger(errorCount) &&
-          errorCount >= 0 &&
-          errorCount <= testCount
-        ) {
-          result[key] = { testCount, errorCount };
-        }
-        return result;
-      },
-      {},
-    );
+  function sanitizeProficiencyRecord(record, fallbackLibraryId = "") {
+    if (!record || typeof record !== "object") return null;
+    const libraryId = stringValue(record.libraryId || fallbackLibraryId);
+    const english = stringValue(record.english).trim();
+    const wordKey = normalizeWordKey(record.wordKey || english);
+    const testCount = Number(record.testCount);
+    const errorCount = Number(record.errorCount);
+    if (
+      !libraryId ||
+      !wordKey ||
+      !Number.isInteger(testCount) ||
+      testCount <= 0 ||
+      !Number.isInteger(errorCount) ||
+      errorCount < 0 ||
+      errorCount > testCount
+    ) {
+      return null;
+    }
+    return {
+      libraryId,
+      wordKey,
+      english: english || wordKey,
+      pos: stringValue(record.pos).trim(),
+      meaning: stringValue(record.meaning).trim(),
+      testCount,
+      errorCount,
+    };
   }
 
-  function sanitizeWordStats(rawStats, legacyLibraryId) {
-    if (!rawStats || typeof rawStats !== "object") return {};
+  function sanitizeWordStats(rawStats, legacyLibraryId = "") {
+    if (Array.isArray(rawStats)) {
+      return rawStats
+        .map((record) => sanitizeProficiencyRecord(record, legacyLibraryId))
+        .filter(Boolean);
+    }
+    if (!rawStats || typeof rawStats !== "object") return [];
+
     const values = Object.values(rawStats);
     const isLegacy = values.some(
       (value) => value && typeof value === "object" && "testCount" in value,
     );
+    const records = [];
+
     if (isLegacy) {
-      const bucket = sanitizeStatsBucket(rawStats);
-      return legacyLibraryId ? { [legacyLibraryId]: bucket } : {};
+      Object.entries(rawStats).forEach(([wordKey, value]) => {
+        const record = sanitizeProficiencyRecord(
+          {
+            libraryId: legacyLibraryId,
+            wordKey,
+            english: wordKey,
+            testCount: value?.testCount,
+            errorCount: value?.errorCount,
+          },
+          legacyLibraryId,
+        );
+        if (record) records.push(record);
+      });
+      return records;
     }
-    return Object.entries(rawStats).reduce((result, [libraryId, bucket]) => {
-      if (!libraryId || !bucket || typeof bucket !== "object") return result;
-      const cleanBucket = sanitizeStatsBucket(bucket);
-      if (Object.keys(cleanBucket).length) result[libraryId] = cleanBucket;
-      return result;
-    }, {});
+
+    Object.entries(rawStats).forEach(([libraryId, bucket]) => {
+      if (!bucket || typeof bucket !== "object" || Array.isArray(bucket)) return;
+      Object.entries(bucket).forEach(([wordKey, value]) => {
+        const record = sanitizeProficiencyRecord(
+          {
+            libraryId,
+            wordKey,
+            english: wordKey,
+            testCount: value?.testCount,
+            errorCount: value?.errorCount,
+          },
+          libraryId,
+        );
+        if (record) records.push(record);
+      });
+    });
+    return records;
   }
 
   function rebuildWordStatsFromHistory(testHistory, libraries) {
     const libraryIds = new Set(libraries.map((library) => library.id));
-    return testHistory.reduce((result, record) => {
-      if (!libraryIds.has(record.libraryId) || !Array.isArray(record.wordResults)) {
-        return result;
-      }
-      const libraryStats = (result[record.libraryId] ||= {});
+    const proficiency = [];
+
+    testHistory.forEach((record) => {
+      if (!libraryIds.has(record.libraryId) || !Array.isArray(record.wordResults)) return;
       record.wordResults.forEach((wordResult) => {
         const key = wordResult.wordKey || normalizeWordKey(wordResult.english || "");
         if (!key) return;
-        const stats = libraryStats[key] || { testCount: 0, errorCount: 0 };
-        stats.testCount += 1;
-        stats.errorCount += Math.min(
+        let entry = proficiency.find(
+          (item) => item.libraryId === record.libraryId && item.wordKey === key,
+        );
+        if (!entry) {
+          entry = {
+            libraryId: record.libraryId,
+            wordKey: key,
+            english: wordResult.english || key,
+            pos: wordResult.pos || "",
+            meaning: wordResult.meaning || "",
+            testCount: 0,
+            errorCount: 0,
+          };
+          proficiency.push(entry);
+        }
+        entry.testCount += 1;
+        entry.errorCount += Math.min(
           1,
           Math.max(0, Number(wordResult.errorCount) || 0),
         );
-        libraryStats[key] = stats;
       });
-      return result;
-    }, {});
+    });
+    return proficiency;
   }
 
   function stringValue(value) {
@@ -944,7 +996,7 @@
   }
 
   function getLibraryStats(libraryId) {
-    return (state.vocab.wordStats[libraryId] ||= {});
+    return state.vocab.wordStats.filter((item) => item.libraryId === libraryId);
   }
 
   function ensureLibrarySelections() {
@@ -1200,8 +1252,10 @@
     if (!window.confirm(`确定删除单词“${word.english}”吗？`)) return;
 
     library.words = library.words.filter((item) => item.id !== id);
-    const libraryStats = getLibraryStats(library.id);
-    delete libraryStats[normalizeWordKey(word.english)];
+    const wordKey = normalizeWordKey(word.english);
+    state.vocab.wordStats = state.vocab.wordStats.filter(
+      (item) => !(item.libraryId === library.id && item.wordKey === wordKey),
+    );
     saveVocabularyState();
     saveStatsState();
     saveHistoryState();
@@ -1242,7 +1296,9 @@
     }
 
     state.vocab.libraries = state.vocab.libraries.filter((item) => item.id !== library.id);
-    delete state.vocab.wordStats[library.id];
+    state.vocab.wordStats = state.vocab.wordStats.filter(
+      (item) => item.libraryId !== library.id,
+    );
     state.vocab.testHistory = state.vocab.testHistory.filter(
       (record) => record.libraryId !== library.id && record.libraryName !== library.name,
     );
@@ -1521,18 +1577,48 @@
     }, nextQuestionDelay);
   }
 
+  function readPersistedProficiencyStats() {
+    const storedStats = readStoredState(STATS_STORAGE_KEY);
+    if (storedStats && "wordStats" in storedStats) {
+      return sanitizeWordStats(storedStats.wordStats, "");
+    }
+    return Array.isArray(state.vocab.wordStats)
+      ? state.vocab.wordStats.map((item) => ({ ...item }))
+      : [];
+  }
+
   function accumulateTestWordStats(libraryId, wordResults) {
-    if (!libraryId || !Array.isArray(wordResults) || wordResults.length === 0) return;
-    const libraryStats = getLibraryStats(libraryId);
+    if (!libraryId || !Array.isArray(wordResults) || wordResults.length === 0) {
+      state.vocab.wordStats = readPersistedProficiencyStats();
+      return;
+    }
+    const proficiency = readPersistedProficiencyStats();
 
     wordResults.forEach((wordResult) => {
       const key = wordResult.wordKey || normalizeWordKey(wordResult.english || "");
       if (!key) return;
-      const stats = libraryStats[key] || { testCount: 0, errorCount: 0 };
-      stats.testCount += 1;
-      stats.errorCount += Math.min(1, Math.max(0, Number(wordResult.errorCount) || 0));
-      libraryStats[key] = stats;
+      let entry = proficiency.find(
+        (item) => item.libraryId === libraryId && item.wordKey === key,
+      );
+      if (!entry) {
+        entry = {
+          libraryId,
+          wordKey: key,
+          english: wordResult.english || key,
+          pos: wordResult.pos || "",
+          meaning: wordResult.meaning || "",
+          testCount: 0,
+          errorCount: 0,
+        };
+        proficiency.push(entry);
+      }
+      entry.testCount += 1;
+      entry.errorCount += Math.min(
+        1,
+        Math.max(0, Number(wordResult.errorCount) || 0),
+      );
     });
+    state.vocab.wordStats = proficiency;
   }
 
   function finishVocabTest(reason = "manual") {
@@ -1697,25 +1783,23 @@
         getLibraryById(record.libraryId) ||
         state.vocab.libraries.find((item) => item.name === record.libraryName);
       const libraryId = library?.id || record.libraryId;
-      const libraryStats = libraryId ? state.vocab.wordStats[libraryId] : null;
-
-      if (libraryStats) {
+      if (libraryId) {
         record.wordResults.forEach((wordResult) => {
           const key =
             wordResult.wordKey || normalizeWordKey(wordResult.english || "");
-          const stats = libraryStats[key];
-          if (!stats || stats.testCount <= 0) return;
-
-          stats.testCount -= 1;
-          stats.errorCount = Math.max(
-            0,
-            stats.errorCount - Math.max(0, Number(wordResult.errorCount) || 0),
+          const index = state.vocab.wordStats.findIndex(
+            (item) => item.libraryId === libraryId && item.wordKey === key,
           );
-          if (stats.testCount <= 0) delete libraryStats[key];
+          if (index < 0) return;
+
+          const entry = state.vocab.wordStats[index];
+          entry.testCount -= 1;
+          entry.errorCount = Math.max(
+            0,
+            entry.errorCount - Math.max(0, Number(wordResult.errorCount) || 0),
+          );
+          if (entry.testCount <= 0) state.vocab.wordStats.splice(index, 1);
         });
-        if (Object.keys(libraryStats).length === 0) {
-          delete state.vocab.wordStats[libraryId];
-        }
       }
     }
 
@@ -1729,11 +1813,12 @@
 
   function renderWordStats() {
     const library = getTestLibrary();
-    const libraryStats = library ? getLibraryStats(library.id) : {};
+    const libraryStats = library ? getLibraryStats(library.id) : [];
+    const statsByWord = new Map(libraryStats.map((item) => [item.wordKey, item]));
     const rows = (library?.words || [])
       .map((word) => ({
         word,
-        stats: libraryStats[normalizeWordKey(word.english)] || {
+        stats: statsByWord.get(normalizeWordKey(word.english)) || {
           testCount: 0,
           errorCount: 0,
         },
