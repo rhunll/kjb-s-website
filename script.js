@@ -1605,58 +1605,26 @@
           ? rawStats.wordStats
           : null;
       if (Array.isArray(storedArray)) {
-        return storedArray
-          .map((item) => {
-            if (!item || typeof item !== "object") return null;
-            const libraryId = stringValue(item.libraryId);
-            const wordKey = normalizeWordKey(
-              item.wordKey || item.english || "",
-            );
-            const testCount = Number(item.testCount);
-            const errorCount = Number(item.errorCount);
-            if (
-              !libraryId ||
-              !wordKey ||
-              !Number.isInteger(testCount) ||
-              testCount <= 0 ||
-              !Number.isInteger(errorCount) ||
-              errorCount < 0
-            ) {
-              return null;
-            }
-            return {
-              ...item,
-              libraryId,
-              wordKey,
-              english: stringValue(item.english).trim() || wordKey,
-              pos: stringValue(item.pos).trim(),
-              meaning: stringValue(item.meaning).trim(),
-              testCount,
-              errorCount,
-            };
-          })
-          .filter(Boolean);
-      }
-      if (rawStats && rawStats.wordStats && typeof rawStats.wordStats === "object") {
-        return sanitizeWordStats(rawStats.wordStats, "");
+        return storedArray;
       }
     } catch {
-      // Fall through to the in-memory fallback.
+      // Ignore invalid stored data and fall back to memory.
     }
     return Array.isArray(state.vocab.wordStats)
-      ? state.vocab.wordStats.map((item) => ({ ...item }))
+      ? state.vocab.wordStats
       : [];
   }
 
   function accumulateTestWordStats(libraryId, wordResults) {
     if (!libraryId || !Array.isArray(wordResults) || wordResults.length === 0) {
-      state.vocab.wordStats = readPersistedProficiencyStats();
       return;
     }
+    // Merge into the complete persisted array so every library is preserved.
     const proficiency = readPersistedProficiencyStats();
 
     wordResults.forEach((wordResult) => {
-      const key = wordResult.wordKey || normalizeWordKey(wordResult.english || "");
+      const key =
+        wordResult.wordKey || wordResult.english.trim().toLowerCase();
       if (!key) return;
       let entry = proficiency.find(
         (item) => item.libraryId === libraryId && item.wordKey === key,
