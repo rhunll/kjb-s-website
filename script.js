@@ -317,9 +317,11 @@
         loadedVocab.wordStats,
         hadLibraries ? "" : fallbackLibraryId,
       );
-      if (cleanWordStats.length === 0) {
-        cleanWordStats = rebuildWordStatsFromHistory(cleanTestHistory, cleanLibraries);
-      }
+      cleanWordStats = repairMissingLibraryStats(
+        cleanTestHistory,
+        cleanLibraries,
+        cleanWordStats,
+      );
       const libraryIds = new Set(cleanLibraries.map((library) => library.id));
       const requestedManageId = stringValue(loadedVocab.manageLibraryId);
       const requestedTestId = stringValue(loadedVocab.testLibraryId);
@@ -546,6 +548,23 @@
       });
     });
     return proficiency;
+  }
+
+  function repairMissingLibraryStats(testHistory, libraries, existingStats) {
+    const repaired = Array.isArray(existingStats)
+      ? existingStats.map((item) => ({ ...item }))
+      : [];
+    const existingLibraryIds = new Set(repaired.map((item) => item.libraryId));
+
+    libraries.forEach((library) => {
+      if (existingLibraryIds.has(library.id)) return;
+      const libraryHistory = testHistory.filter(
+        (record) => record.libraryId === library.id && Array.isArray(record.wordResults),
+      );
+      if (libraryHistory.length === 0) return;
+      repaired.push(...rebuildWordStatsFromHistory(libraryHistory, [library]));
+    });
+    return repaired;
   }
 
   function stringValue(value) {
@@ -1578,9 +1597,51 @@
   }
 
   function readPersistedProficiencyStats() {
-    const storedStats = readStoredState(STATS_STORAGE_KEY);
-    if (storedStats && "wordStats" in storedStats) {
-      return sanitizeWordStats(storedStats.wordStats, "");
+    try {
+      const rawStats = JSON.parse(localStorage.getItem(STATS_STORAGE_KEY) || "null");
+      const storedArray = Array.isArray(rawStats)
+        ? rawStats
+        : rawStats && Array.isArray(rawStats.wordStats)
+          ? rawStats.wordStats
+          : null;
+      if (Array.isArray(storedArray)) {
+        return storedArray
+          .map((item) => {
+            if (!item || typeof item !== "object") return null;
+            const libraryId = stringValue(item.libraryId);
+            const wordKey = normalizeWordKey(
+              item.wordKey || item.english || "",
+            );
+            const testCount = Number(item.testCount);
+            const errorCount = Number(item.errorCount);
+            if (
+              !libraryId ||
+              !wordKey ||
+              !Number.isInteger(testCount) ||
+              testCount <= 0 ||
+              !Number.isInteger(errorCount) ||
+              errorCount < 0
+            ) {
+              return null;
+            }
+            return {
+              ...item,
+              libraryId,
+              wordKey,
+              english: stringValue(item.english).trim() || wordKey,
+              pos: stringValue(item.pos).trim(),
+              meaning: stringValue(item.meaning).trim(),
+              testCount,
+              errorCount,
+            };
+          })
+          .filter(Boolean);
+      }
+      if (rawStats && rawStats.wordStats && typeof rawStats.wordStats === "object") {
+        return sanitizeWordStats(rawStats.wordStats, "");
+      }
+    } catch {
+      // Fall through to the in-memory fallback.
     }
     return Array.isArray(state.vocab.wordStats)
       ? state.vocab.wordStats.map((item) => ({ ...item }))
