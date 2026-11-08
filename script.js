@@ -610,11 +610,38 @@
 
   function saveStatsState() {
     try {
+      const rawStats = JSON.parse(localStorage.getItem(STATS_STORAGE_KEY) || "null");
+      const existingStats = Array.isArray(rawStats)
+        ? rawStats
+        : rawStats?.wordStats || [];
+      const mergedMap = new Map();
+
+      existingStats.forEach((item) => {
+        if (item && item.libraryId && item.wordKey) {
+          mergedMap.set(`${item.libraryId}_${item.wordKey}`, item);
+        }
+      });
+
+      const currentStats = Array.isArray(state.vocab.wordStats)
+        ? state.vocab.wordStats
+        : [];
+      currentStats.forEach((item) => {
+        if (!item || !item.libraryId || !item.wordKey) return;
+        const key = `${item.libraryId}_${item.wordKey}`;
+        if (mergedMap.has(key)) {
+          const old = mergedMap.get(key);
+          old.testCount = Math.max(old.testCount || 0, item.testCount || 0);
+          old.errorCount = Math.max(old.errorCount || 0, item.errorCount || 0);
+        } else {
+          mergedMap.set(key, item);
+        }
+      });
+
+      const finalArray = Array.from(mergedMap.values());
+      state.vocab.wordStats = finalArray;
       localStorage.setItem(
         STATS_STORAGE_KEY,
-        JSON.stringify({
-          wordStats: state.vocab.wordStats,
-        }),
+        JSON.stringify({ wordStats: finalArray }),
       );
     } catch {
       showToast("熟练度数据未能保存");
