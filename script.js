@@ -2156,9 +2156,6 @@
   elements.noteInput.value = state.noteDraft;
   elements.noteChars.textContent = String(state.noteDraft.length);
 
-  saveVocabularyState();
-  saveStatsState();
-  saveHistoryState();
   updateCountdown();
   renderTasks();
   renderScores();
