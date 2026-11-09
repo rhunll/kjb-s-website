@@ -1868,22 +1868,31 @@
   }
 
   function renderWordStats() {
-    const library = getTestLibrary();
-    const libraryStats = library ? getLibraryStats(library.id) : [];
-    const statsByWord = new Map(libraryStats.map((item) => [item.wordKey, item]));
-    const rows = (library?.words || [])
-      .map((word) => ({
-        word,
-        stats: statsByWord.get(normalizeWordKey(word.english)) || {
-          testCount: 0,
-          errorCount: 0,
-        },
-      }))
-      .filter((item) => item.stats.testCount > 0)
+    const allStats = Array.isArray(state.vocab.wordStats)
+      ? state.vocab.wordStats
+      : [];
+    const rows = allStats
+      .filter((item) => item && item.libraryId && item.wordKey && item.testCount > 0)
+      .map((stats) => {
+        const library = getLibraryById(stats.libraryId);
+        const libraryWord = library?.words.find(
+          (word) => normalizeWordKey(word.english) === stats.wordKey,
+        );
+        return {
+          stats,
+          libraryName: library?.name || "未知词库",
+          word: {
+            english: stats.english || libraryWord?.english || stats.wordKey,
+            pos: stats.pos || libraryWord?.pos || "",
+            meaning: stats.meaning || libraryWord?.meaning || "",
+          },
+        };
+      })
       .sort(
         (first, second) =>
           second.stats.errorCount - first.stats.errorCount ||
           second.stats.testCount - first.stats.testCount ||
+          first.libraryName.localeCompare(second.libraryName) ||
           first.word.english.localeCompare(second.word.english),
       );
 
@@ -1892,21 +1901,20 @@
     if (rows.length === 0) {
       const empty = document.createElement("p");
       empty.className = "review-empty";
-      empty.textContent = library
-        ? `“${library.name}”完成答题后，这里会显示需要重点复习的单词。`
-        : "请先创建词库并完成答题。";
+      empty.textContent = "完成答题后，这里会显示所有词库中需要重点复习的单词。";
       elements.wordStatsList.append(empty);
       return;
     }
 
-    rows.forEach(({ word, stats }) => {
+    rows.forEach(({ word, stats, libraryName }) => {
       const row = document.createElement("div");
       row.className = "word-stats-row";
 
       const wordInfo = document.createElement("div");
       wordInfo.className = "word-stats-word";
       const english = document.createElement("strong");
-      english.textContent = word.english;
+      english.textContent = `${word.english} (${libraryName})`;
+      english.title = `${word.english} · ${libraryName}`;
       const meaning = document.createElement("span");
       meaning.textContent = `${word.pos} ${word.meaning}`;
       wordInfo.append(english, meaning);

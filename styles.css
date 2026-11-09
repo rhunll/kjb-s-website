@@ -3152,13 +3152,12 @@ textarea:focus-visible {
 }
 
 .word-stats-word strong {
-  overflow: hidden;
   color: var(--text);
   font-family: var(--serif);
   font-size: 15px;
   font-weight: 500;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .word-stats-word span {
