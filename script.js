@@ -87,6 +87,7 @@
     testFeedback: document.querySelector("#test-feedback"),
     testHistoryList: document.querySelector("#test-history-list"),
     wordStatsList: document.querySelector("#word-stats-list"),
+    wordStatsClear: document.querySelector("#clear-all-word-stats"),
     historyModal: document.querySelector("#history-modal"),
     historyModalTitle: document.querySelector("#history-modal-title"),
     historyModalMeta: document.querySelector("#history-modal-meta"),
@@ -1867,10 +1868,29 @@
     showToast("测试历史记录已删除");
   }
 
+  function clearAllWordStats() {
+    if (!Array.isArray(state.vocab.wordStats) || state.vocab.wordStats.length === 0) {
+      showToast("暂无记录可清空");
+      return;
+    }
+    if (!window.confirm("确定要清空所有单词的熟练度记录吗？此操作不可逆！")) return;
+
+    state.vocab.wordStats = [];
+    // saveStatsState merges with old data, so reset the stored array first.
+    localStorage.setItem(
+      STATS_STORAGE_KEY,
+      JSON.stringify({ wordStats: [] }),
+    );
+    saveStatsState();
+    renderWordStats();
+    showToast("已清空所有单词熟练度记录");
+  }
+
   function renderWordStats() {
     const allStats = Array.isArray(state.vocab.wordStats)
       ? state.vocab.wordStats
       : [];
+    elements.wordStatsClear.disabled = allStats.length === 0;
     const rows = allStats
       .filter((item) => item && item.libraryId && item.wordKey && item.testCount > 0)
       .map((stats) => {
@@ -2195,6 +2215,7 @@
   elements.historyModal.addEventListener("click", (event) => {
     if (event.target === elements.historyModal) closeHistoryDetails();
   });
+  elements.wordStatsClear.addEventListener("click", clearAllWordStats);
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeHistoryDetails();
   });

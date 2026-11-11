@@ -2723,6 +2723,30 @@ textarea:focus-visible {
   margin: 0;
 }
 
+.word-stats-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.text-button.danger-text {
+  padding: 3px 0;
+  color: var(--text-muted);
+  background: transparent;
+  font-size: 9px;
+  transition: color 160ms ease, opacity 160ms ease;
+}
+
+.text-button.danger-text:hover,
+.text-button.danger-text:focus-visible {
+  color: #7a3f39;
+}
+
+.text-button.danger-text:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
 .word-library-list {
   max-height: 330px;
   overflow-y: auto;

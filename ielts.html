@@ -564,7 +564,16 @@
               <div class="review-column">
                 <div class="review-column-head">
                   <h3>单词熟练度</h3>
-                  <span>错误次数优先</span>
+                  <div class="word-stats-head-actions">
+                    <span>错误次数优先</span>
+                    <button
+                      id="clear-all-word-stats"
+                      type="button"
+                      class="text-button danger-text"
+                    >
+                      清空记录
+                    </button>
+                  </div>
                 </div>
                 <div class="word-stats-list" id="word-stats-list" aria-live="polite">
                   <p class="review-empty">完成答题后，这里会显示需要重点复习的单词。</p>
