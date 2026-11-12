@@ -263,6 +263,15 @@
           const mode = ["spelling", "choice", "mixed"].includes(record.mode)
             ? record.mode
             : "mixed";
+          const storedAccuracy = Number(record.accuracy);
+          const accuracy =
+            Number.isFinite(storedAccuracy) &&
+            storedAccuracy >= 0 &&
+            storedAccuracy <= 100
+              ? storedAccuracy
+              : total
+                ? Number(((correct / total) * 100).toFixed(2))
+                : 0;
           const wrongWords = (Array.isArray(record.wrongWords) ? record.wrongWords : [])
             .map((word) => {
               if (!word || typeof word !== "object") return null;
@@ -310,7 +319,7 @@
             total,
             correct,
             wrong,
-            accuracy: total ? Math.round((correct / total) * 100) : 0,
+            accuracy,
           };
         })
         .filter(Boolean);
@@ -1399,11 +1408,13 @@
 
   function updateTestDashboard() {
     const answered = vocabTest.correct + vocabTest.wrong;
-    const accuracy = answered ? Math.round((vocabTest.correct / answered) * 100) : 0;
+    const accuracy = answered
+      ? Number(((vocabTest.correct / answered) * 100).toFixed(2))
+      : 0;
     elements.testAnswered.textContent = String(answered);
     elements.testCorrect.textContent = String(vocabTest.correct);
     elements.testWrong.textContent = String(vocabTest.wrong);
-    elements.testAccuracy.textContent = String(accuracy);
+    elements.testAccuracy.textContent = accuracy.toFixed(2);
   }
 
   function syncTestControls() {
@@ -1698,7 +1709,9 @@
       wrong: vocabTest.wrong,
       wrongWords: vocabTest.wrongWords.map((word) => ({ ...word })),
       wordResults: vocabTest.wordResults.map((word) => ({ ...word })),
-      accuracy: total ? Math.round((vocabTest.correct / total) * 100) : 0,
+      accuracy: total
+        ? Number(((vocabTest.correct / total) * 100).toFixed(2))
+        : 0,
     });
     state.vocab.testLibraryId = vocabTest.libraryId;
     saveVocabularyState();
@@ -1759,7 +1772,9 @@
 
       const accuracy = document.createElement("strong");
       accuracy.className = "review-accuracy";
-      accuracy.textContent = `${record.accuracy}%`;
+      const accuracyValue = Number(record.accuracy);
+      accuracy.textContent =
+        `${Number.isFinite(accuracyValue) ? accuracyValue.toFixed(2) : "0.00"}%`;
 
       const detailButton = document.createElement("button");
       detailButton.className = "history-detail";
